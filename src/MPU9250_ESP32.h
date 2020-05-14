@@ -196,15 +196,8 @@ class MPU9250
     // 2 for 8 Hz, 6 for 100 Hz continuous magnetometer data read
     uint8_t Mmode = M_8HZ;
     uint8_t writeByteWire(uint8_t, uint8_t, uint8_t);
-    //uint8_t writeByteSPI(uint8_t, uint8_t);
-    //uint8_t writeMagByteSPI(uint8_t subAddress, uint8_t data);
-    //uint8_t readByteSPI(uint8_t subAddress);
-    //uint8_t readMagByteSPI(uint8_t subAddress);
     uint8_t readByteWire(uint8_t address, uint8_t subAddress);
-    //void setupMagForSPI();
-// TODO: Remove this next line
 public:
-    //uint8_t ak8963WhoAmI_SPI();
 
   public:
     float pitch, yaw, roll;
@@ -234,8 +227,6 @@ public:
     // Stores the 16-bit signed accelerometer sensor output
     int16_t accelCount[3];
 
-    // Public method declarations
-    //MPU9250( int8_t csPin, SPIClass &spiInterface = SPI, uint32_t spi_freq = SPI_DATA_RATE);
     MPU9250( uint8_t address = MPU9250_ADDRESS_AD0, TwoWire &wirePort = Wire, uint32_t clock_frequency = 100000 );
     void getMres();
     void getGres();
@@ -253,10 +244,7 @@ public:
     uint8_t writeByte(uint8_t, uint8_t, uint8_t);
     uint8_t readByte(uint8_t, uint8_t);
     uint8_t readBytes(uint8_t, uint8_t, uint8_t, uint8_t *);
-    // TODO: make SPI/Wire private
-    //uint8_t readBytesSPI(uint8_t, uint8_t, uint8_t *);
     uint8_t readBytesWire(uint8_t, uint8_t, uint8_t, uint8_t *);
-    //bool isInI2cMode() { return _csPin == -1; }
     bool begin();
 };  // class MPU9250
 
