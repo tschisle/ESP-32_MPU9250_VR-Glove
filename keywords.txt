@@ -27,6 +27,11 @@ MPU9250SelfTest	KEYWORD2
 writeByte	KEYWORD2
 readByte	KEYWORD2
 readBytes	KEYWORD2
+PLSF_Initialization	KEYWORD2
+PLSF_Update	KEYWORD2
+PLSF_Clear	KEYWORD2
+
+
 
 ################################################################################
 # Constants (LITERAL1)
@@ -162,3 +167,4 @@ ZA_OFFSET_L	LITERAL1
 ADO	LITERAL1
 MPU9250_ADDRESS	LITERAL1
 AK8963_ADDRESS	LITERAL1
+samples	LITERAL1
