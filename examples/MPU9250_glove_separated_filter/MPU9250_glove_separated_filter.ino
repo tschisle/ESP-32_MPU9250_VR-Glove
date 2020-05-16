@@ -4,7 +4,7 @@
 #define I2Cclock 400000
 #define I2Cport Wire
 #define MPU9250_ADDRESS MPU9250_ADDRESS_AD0
-#define SAMPLES 10  //how many sample are sent to the filter
+#define samples 10  //how many sample are sent to the filter
 
 //Debug Input/Flag Trigger
 char input;
@@ -19,11 +19,6 @@ char sinput;
 float magavg[3] = {0, 0, 0};
 int counter = 0;
 const int avgsam = 3; //how many samples to average
-float least_square_mat[4][samples]; //used to find the slope of the averaged sample clusters   1: sami - samavg 2: magi-magavg 3: 1*2 4: 1*1
-float least_square_avg; //used to find the slope of the averaged sample clusters
-float least_square_sum_comp[2]; //used to find the slope of the averaged sample clusters
-float least_square_slope_inter[2]; //holds slope and intercept values to approximate current value
-float approximation; //holds final approximated value
 float percentage; //using variable to allow for data validation
 float magmag; //holds the magnitude value
 float sammat[samples]; //holds the averaged samples in a matrix
@@ -33,6 +28,7 @@ int prevarr[3] = {0, 0, 0};
 int samcoun = 0;
 float sammin[3] = {0, 0, 0};
 float sammax[3] = {0, 0, 0};
+float temp_filter;
 const float tolerance = 60; //
 
 //Accelerometer Direction
@@ -53,6 +49,7 @@ bool prev_pinch_max_cal = false; // Edge detection of flag for initializing vari
 bool prev_pinch_min_cal = false; // Edge detection of flag for initializing variables & counters
 
 MPU9250 myIMU(MPU9250_ADDRESS, I2Cport, I2Cclock);
+PLSF_Filter filter;
 
 void setup() {
   Serial.begin(9600);
@@ -71,16 +68,8 @@ void setup() {
   myIMU.getAres();
   myIMU.getGres();
   myIMU.getMres();
-  Serial.println("Started");
-  //Precalculating static least square values HAS REDUNDANT ELEMENTS
-  for (int x = 0; x < samples; x++) {
-    least_square_mat[0][x] = x - ((samples + 1) / 2);
-    least_square_mat[3][x] = least_square_mat[0][x] * least_square_mat[0][x];
-  }
-  least_square_sum_comp[1] = 0;
-  for (int x = 0; x < samples; x++) {
-    least_square_sum_comp[1] = least_square_sum_comp[1] + least_square_mat[3][x];
-  }
+  Serial.println("Started"); //Needs to be replaced/removed
+  filter.PLSF_Initialization();
   //Timer set up
   pinch_tilt_time = millis() + pinch_tilt_update;
 }
@@ -105,7 +94,7 @@ void loop() {
       Serial.println("pinch_gesture OFF");
     }
   }
-  if (millis() >= pinch_tilt_time) {
+  if (millis() >= pinch_tilt_time) { //sets the cycle rate of the bulk of the code to avoid over-reading from the sensor, which corrupts the data
     pinch_tilt_time = millis() + pinch_tilt_update;
     if (myIMU.readByte(MPU9250_ADDRESS, INT_STATUS) & 0x01)
     {
@@ -193,40 +182,17 @@ void loop() {
           //converts from 3 coordinates to a magnitude.  This is possible since we're effectively moving the origin to the max position,
           //however we're now operating under the assumption that the curve from the finger movement can be adequately approximated with a line
           magmag = sqrt((magavg[0] * magavg[0]) + (magavg[1] * magavg[1]) + (magavg[2] * magavg[2]));
-          //clearing previous values and shifting mag data
-          for (int x = 0; x < samples; x++) {
-            if (x < (samples - 1)) {
-              sammat[x] = sammat[x + 1];
-            }
-            least_square_avg = 0;
-            least_square_sum_comp[0] = 0;
-          }
-          sammat[samples - 1] = magmag;
-          //finding average mag values
-          for (int x = 0; x < samples; x++) {
-            least_square_avg = least_square_avg + sammat[x];
-          }
-          least_square_avg = least_square_avg / samples;
-          //calculating least square values
-          for (int x = 0; x < samples; x++) {
-            least_square_mat[1][x] = sammat[x] - least_square_avg;
-            least_square_mat[2][x] = least_square_mat[0][x] * least_square_mat[1][x];
-          }
-          for (int x = 0; x < samples; x++) {
-            least_square_sum_comp[0] = least_square_sum_comp[0] + least_square_mat[2][x];
-          }
-          least_square_slope_inter[0] = least_square_sum_comp[0] / least_square_sum_comp[1]; //slopes
-          least_square_slope_inter[1] = least_square_avg - (least_square_slope_inter[0] * ((samples + 1) / 2)); //intercept
-          //approximating current mag data from best fit LINE and reporting movement percentage
-          //this step provides the unitless value
-          approximation = (least_square_slope_inter[0] * samples) + least_square_slope_inter[1];
-          percentage = (1 - (approximation / magmin)) * 100; //finds percentage from max to min, inverts the value, then multiples it by 100
+          temp_filter = filter.PLSF_Update(magmag);
+          percentage = (1 - (temp_filter / magmin)) * 100; //finds percentage from max to min, inverts the value, then multiples it by 100
           if (percentage < 0) {
             percentage = 0;
           } else if (percentage > 100) {
             percentage = 100;
           }
-          percentage = map(percentage, 55, 85, 0, 100); //quick fix
+          
+          //NOTE: the values need to be fine tuned
+          percentage = map(percentage, 55, 88, 0, 100); //quick fix - this is here because inevitable fluctuations between calibration and the gesture requires the min and max to change to provide the responsiveness to feel more realistic
+              
           if (percentage < 0) {
             percentage = 0;
           } else if (percentage > 100) {
