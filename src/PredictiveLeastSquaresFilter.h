@@ -8,7 +8,7 @@ class PLSF_Filter
 {
 	_
 	public:
-	void PLSF_Initialization(uint8_t );
+	void PLSF_Initialization();
 
 	float PLSF_Update(float );
 							  

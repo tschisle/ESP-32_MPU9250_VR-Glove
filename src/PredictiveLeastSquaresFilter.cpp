@@ -12,7 +12,7 @@
 // Future updates might also perform a quick fourier transform to identify the
 // common frequencies of noise.
 
-int samples = 10; //how many averaged sample clusters used to find the slope
+//int samples; //how many averaged sample clusters used to find the slope
 float least_square_mat[4][samples]; //used to find the slope of the averaged sample clusters   1: sami - samavg 2: magi-magavg 3: 1*2 4: 1*1
 float least_square_avg; //used to find the slope of the averaged sample clusters
 float least_square_sum_comp[2]; //used to find the slope of the averaged sample clusters
@@ -20,7 +20,7 @@ float least_square_slope_inter[2]; //holds slope and intercept values to approxi
 float approximation; //holds final approximated value
 float sammat[samples]; //holds the averaged samples in a matrix
 
-void PLSF_Filter::PLSF_Initialization(uint8_t _desiredsamples){
+void PLSF_Filter::PLSF_Initialization(){ 
 //Precalculating static least square values HAS REDUNDANT ELEMENTS
 	for (int _x = 0; _x < samples; _x++) {
 		least_square_mat[0][_x] = _x - ((samples + 1) / 2);
