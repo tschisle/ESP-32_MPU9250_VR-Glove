@@ -1,3 +1,16 @@
+/* NOTES:
+ * 
+ * After starting to create the mathematical model, it confirmed that doing an average of samples before the filter equal 
+ * exactly averaging the values after the filter instead.  Interestingly, averaging the values at all increases the percent
+ * error of the output compared to the ideal signal.  This means that once the number of samples is optimized any smoothing
+ * via averaging would not ideal if percent error is the criteria for success.
+ * 
+ * Future version will remove the averaging since or implement an adaptive averaging to increase the averaging only if the speed
+ * of the gesture is recognized to be slow.  Slow gestures are inherently meant to be fine-tuned movement, in which smooth movement
+ * out weights the need for low latency
+ * 
+ */
+
 #include <MPU9250_ESP32.h>
 #include <PredictiveLeastSquaresFilter.h>
 #include <Wire.h>
