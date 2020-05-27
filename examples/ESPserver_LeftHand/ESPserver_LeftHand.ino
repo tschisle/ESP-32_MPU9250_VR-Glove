@@ -2,6 +2,13 @@
 //touch input and magnetic sensing
 //touch input always available and magnetic sensing only available after calibration received from right hand.
 
+/* GOALS:
+ * - Replace delay calls with a time dependent call 
+ * - Make every Serial call compiled based off a defined symbol
+ * - Replace touch on/off elseif's with a more robust system  
+ * - Replace touch multiple tolerances with an autocalibrated value 
+ */
+
 // Just test touch pin - Touch0 is T0 which is on GPIO 4
 /* Press, hold, slide - trans number
    1  - press T7

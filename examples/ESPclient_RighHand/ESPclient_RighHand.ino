@@ -1,4 +1,8 @@
 //Left hand code - touch interactions - magnetic sensing and communiaction with Head mounted Device
+/* GOALS:
+ * - Replace delay calls with a time dependent call 
+ * - Make every Serial call compiled based off a defined symbol
+ */
 
 #include <WiFi.h>
 #include <WiFiUdp.h>
