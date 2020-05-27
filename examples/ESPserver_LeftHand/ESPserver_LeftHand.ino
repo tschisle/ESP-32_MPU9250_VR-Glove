@@ -36,7 +36,8 @@ int testID = 0;
 //Touch configuration
 int command = 0;
 int aux_command = 0;
-const int set_point = 45; //value based from trial and error
+const int set_point_h = 45; //value based from trial and error
+const int set_point_l = 10; //value based from trial and error
 int T9_init = 0;
 int T8_init = 0;
 int T7_init = 0;
@@ -94,7 +95,6 @@ void loop() {
     Udp.endPacket();
   }
   //-----------------------------------------------------------------
-  TouchRead(); //not useful since the reads are done below and also since the values aren't moved to variables
   /* NOTES:
    * Since the tolerance of the touchread conditions for the setting and clearing of the command variable are not the same for both, there exists a state between 
    * where the variable "command" isn't set or cleared.  This creates a schmitt trigger like performance. This may not be ideal since the tolerances are based on
@@ -105,13 +105,13 @@ void loop() {
    * the command variable.  
    */
   //Switch Case based on sensor values, but with if else statements
-  if ((T7_init - touchRead(T7) ) > set_point) {
+  if ((T7_init - touchRead(T7) ) > set_point_h) {
     command = 1; //command[0] = 1; //this is for the wifi part
-  } else if ((T6_init - touchRead(T6)) > set_point) {
+  } else if ((T6_init - touchRead(T6)) > set_point_h) {
     command = 2;//command[0] = 2;
-  } else if ((T8_init - touchRead(T8)) > set_point) {
+  } else if ((T8_init - touchRead(T8)) > set_point_h) {
     command = 3; //command[0] = 3;
-  } else if ((T9_init - touchRead(T9)) > set_point) {
+  } else if ((T9_init - touchRead(T9)) > set_point_h) {
     command = 4; //command[0] = 4;
   }
   Serial.print("command  ");
@@ -120,13 +120,13 @@ void loop() {
   sendReadingsUnity(command); //sends a messace every cycle to the client 192, 168, 4, 12
   delay(100);// needs to be removed
   //to make zero afer each touch
-  if ((T7_init - touchRead(T7) ) < 10) {   //Switch Case based on sensor values against an arbitrary value of 10
+  if ((T7_init - touchRead(T7) ) < set_point_l) {  
     command = 0; //command[0] = 1; //this is for the wifi part
-  } else if ((T6_init - touchRead(T6)) < 10) {
+  } else if ((T6_init - touchRead(T6)) < set_point_l) {
     command = 0;//command[0] = 2;
-  } else if ((T8_init - touchRead(T8)) < 10) {
+  } else if ((T8_init - touchRead(T8)) < set_point_l) {
     command = 0; //command[0] = 3;
-  } else if ((T9_init - touchRead(T9)) < 10) {
+  } else if ((T9_init - touchRead(T9)) < set_point_l) {
     command = 0; //command[0] = 4;
   }
   //-----------------------------------------------------------------
@@ -163,11 +163,4 @@ void sendReadingsUnity(int testID) { //sends message to UNITY
   Serial.print("testID  ");
   Serial.println(testID);
 
-}
-//------------------------------------------------------------------
-void TouchRead() { //This function isn't currently used.  reported values aren't moved to a variable so the readings are thrown out.
-  touchRead(T9);
-  touchRead(T8);
-  touchRead(T7);
-  touchRead(T6);
 }
