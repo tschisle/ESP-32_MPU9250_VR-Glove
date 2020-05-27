@@ -30,7 +30,6 @@ const char *password = "pastelstreet317";
 IPAddress ipCliente (192, 168, 4, 10);   // right hand glove IP address to send messages directly
 //IPAddress ipCliente3(192, 168, 4, 12);   // right hand glove IP address to send messages directly
 IPAddress ipCliente3(192, 168, 1, 8);  //UNITY client ip
-int testID = 0;
 
 //_____________________________________________________________________________________
 //Touch configuration
@@ -139,7 +138,7 @@ void sendReadings(int testID) { //sends message to the right hand
   Udp.printf("for right hand: ");
   char buf[20];   // buffer to hold the string to append
   //unsigned long testID = 2015;
-  sprintf(buf, "%lu", testID);  // appending the testID to create a char
+  sprintf(buf, "%lu", (long unsigned int) testID);  // appending the testID to create a char
   Udp.printf(buf);  // send the char
   //sending words
   Udp.printf("\r\n");   // End segment
@@ -154,7 +153,7 @@ void sendReadingsUnity(int testID) { //sends message to UNITY
   Udp.beginPacket(ipCliente3, 9999); //send package to the desired IP address
   Udp.printf("for UNITY : ");
   char buf[20];   // buffer to hold the string to append
-  sprintf(buf, "%lu", testID);  // appending the testID to create a char
+  sprintf(buf, "%lu", (long unsigned int) testID);  // appending the testID to create a char
   //Udp.printf(buf);  // send the char
   Udp.write(testID);
   //sending words

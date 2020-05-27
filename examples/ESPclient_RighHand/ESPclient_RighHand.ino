@@ -89,10 +89,10 @@ void loop() {
 
 //----------------------------------------------------------------------------------------------------------------
 
-void sendReadings(int testID ) {
+void sendReadings(int testID_f ) {
   Udp.beginPacket(ipServidor, 9999);  //Initiate transmission of data
   char buf[20];   // buffer to hold the string to append
-  sprintf(buf, "%lu", testID);  // appending the millis to create a char
+  sprintf(buf, "%lu", (long unsigned int) testID_f);  // appending the millis to create a char
   Udp.printf(buf);  // print the char
   //sending words
   Udp.printf("\r\n");   // End segment
