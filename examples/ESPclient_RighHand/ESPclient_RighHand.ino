@@ -1,7 +1,14 @@
 //Left hand code - touch interactions - magnetic sensing and communiaction with Head mounted Device
 /* GOALS:
- * - Replace delay calls with a time dependent call 
- * - Make every Serial call compiled based off a defined symbol
+   - Replace delay calls with a time dependent call
+   - Reorganize if statments to avoid bouncing-like preformance
+   - Make every Serial call compiled based off a defined symbol
+   - Add the sensor code
+*/
+
+/* NOTES:
+ * touch if's are organized in a way that allows for bouncing-like performance
+ * 
  */
 
 #include <WiFi.h>
@@ -28,6 +35,11 @@ int contador = 0; //variable to contain the steps to send the commands
 char counter[255];
 int T7_init = 0;
 
+//delay timers -
+unsigned long touch_timer;
+int touch_timer_length = 125; //may cause issues with mismatched data types
+int readings_timer_offset = 5; //may cause issues with mismatched data types
+
 void setup() {
   Serial.begin(115200);
   WiFi.begin(ssid, password);
@@ -42,52 +54,58 @@ void setup() {
   Serial.print("T7 init ");
   Serial.println(T7_init);
   delay(600);
+  //Timer Initializations
+  touch_timer = millis();
+  get_readings_touch_offset = millis();
 }
 
 void loop() {
-  Serial.print("T7  ");
-  Serial.println(touchRead(T7));
-  if ((T7_init - touchRead(T7) ) > set_point) {
-    command = aux_command;
-    aux_command = aux_command + 1;
-  }
-  if ((aux_command - command) > 0 && contador == 0) {
-    testID = 1;
-    sendReadings(testID);
-    contador = 1;
-    aux_command = 0;
-    Serial.println(counter);
-  }
-  if ((aux_command - command) > 0 && contador == 1) {
-    testID = 2;
-    sendReadings(testID);
-    contador = 2;
-    aux_command = 0;
-    Serial.println(counter);
-  }
-  if ((aux_command - command) > 0 && contador == 2) {
-    testID = 3;
-    sendReadings(testID);
-    contador = 3;
-    aux_command = 0;
-    Serial.println(counter);
-  }
-  if ((aux_command - command) > 0 && contador == 3) {
-    testID = 4;
-    sendReadings(testID);
-    contador = 4;
-    aux_command = 0;
-    Serial.println(counter);
+  if (touch_timer >= (millis() - touch_timer_length)) {
+    Serial.print("T7  ");
+    Serial.println(touchRead(T7));
+    if ((T7_init - touchRead(T7) ) > set_point) {
+      command = aux_command;
+      aux_command = aux_command + 1;
+    }
+    if ((aux_command - command) > 0 && contador == 0) {
+      testID = 1;
+      sendReadings(testID);
+      contador = 1;
+      aux_command = 0;
+      Serial.println(counter);
+    }
+    if ((aux_command - command) > 0 && contador == 1) {
+      testID = 2;
+      sendReadings(testID);
+      contador = 2;
+      aux_command = 0;
+      Serial.println(counter);
+    }
+    if ((aux_command - command) > 0 && contador == 2) {
+      testID = 3;
+      sendReadings(testID);
+      contador = 3;
+      aux_command = 0;
+      Serial.println(counter);
+    }
+    if ((aux_command - command) > 0 && contador == 3) {
+      testID = 4;
+      sendReadings(testID);
+      contador = 4;
+      aux_command = 0;
+      Serial.println(counter);
+    }
   }
   //---------------------------------------------------------
-  getReadings();
-  delay(120); //needs to be removed
-  //-------------------------------------------------------------
-  //to make zero afer each touch
-  if (contador == 4) {
-    testID = 0;
-    contador = 0;
-    aux_command = 0;
+  if (touch_timer >= (millis() - (touch_timer_length + readings_timer_offset))) {
+    getReadings();
+    //-------------------------------------------------------------
+    //to make zero afer each touch
+    if (contador == 4) {
+      testID = 0;
+      contador = 0;
+      aux_command = 0;
+    }
   }
 }//end of the Loop
 
@@ -103,7 +121,6 @@ void sendReadings(int testID_f ) {
   Udp.endPacket();  // Close communication
   Serial.print("enviando: ");   // Serial monitor for user
   Serial.println(buf);
-  delay(5); // needs to be removed
 }
 
 void getReadings() {
@@ -118,5 +135,4 @@ void getReadings() {
     Serial.println(packetBuffer);
   }
   Serial.println("");
-  delay(5); // needs to be removed
 }
