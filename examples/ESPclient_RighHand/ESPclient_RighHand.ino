@@ -1,15 +1,8 @@
 //Left hand code - touch interactions - magnetic sensing and communiaction with Head mounted Device
 /* GOALS:
-   - Replace delay calls with a time dependent call
-   - Reorganize if statments to avoid bouncing-like preformance
    - Make every Serial call compiled based off a defined symbol
    - Add the sensor code
 */
-
-/* NOTES:
- * touch if's are organized in a way that allows for bouncing-like performance
- * 
- */
 
 #include <WiFi.h>
 #include <WiFiUdp.h>
@@ -27,11 +20,8 @@ IPAddress ipServidor (192, 168, 4, 1);   // Declaration of default IP for server
 IPAddress ipCliente (192, 168, 4, 10);   // Different IP than server
 //IPAddress ipCliente3(192, 168, 1, 8);  //UNITY client ip
 IPAddress Subnet(255, 255, 255, 0);
-int testID = 0;
-char command = 0;
-int aux_command = 0;
 const int set_point = 20; //example value based on several online tutorials
-int contador = 0; //variable to contain the steps to send the commands
+int command = 0; //variable that contains the step
 char counter[255];
 int T7_init = 0;
 
@@ -39,6 +29,7 @@ int T7_init = 0;
 unsigned long touch_timer;
 int touch_timer_length = 125; //may cause issues with mismatched data types
 int readings_timer_offset = 5; //may cause issues with mismatched data types
+bool readings_flag = false; //this is done to avoid any case were the loop takes longer than a millisecond to complete
 
 void setup() {
   Serial.begin(115200);
@@ -56,7 +47,6 @@ void setup() {
   delay(600);
   //Timer Initializations
   touch_timer = millis();
-  get_readings_touch_offset = millis();
 }
 
 void loop() {
@@ -64,57 +54,47 @@ void loop() {
     Serial.print("T7  ");
     Serial.println(touchRead(T7));
     if ((T7_init - touchRead(T7) ) > set_point) {
-      command = aux_command;
-      aux_command = aux_command + 1;
+      switch (command) {
+        case 4:
+          command = 0;
+          break;
+        case 3:
+          sendReadings(4);
+          command = 4;
+          Serial.println(counter);
+          break;
+        case 2:
+          sendReadings(3);
+          command = 3;
+          Serial.println(counter);
+          break;
+        case 1:
+          sendReadings(2);
+          command = 2;
+          Serial.println(counter);
+          break;
+        default:
+          sendReadings(1);
+          command = 1;
+          Serial.println(counter);
+      }
     }
-    if ((aux_command - command) > 0 && contador == 0) {
-      testID = 1;
-      sendReadings(testID);
-      contador = 1;
-      aux_command = 0;
-      Serial.println(counter);
-    }
-    if ((aux_command - command) > 0 && contador == 1) {
-      testID = 2;
-      sendReadings(testID);
-      contador = 2;
-      aux_command = 0;
-      Serial.println(counter);
-    }
-    if ((aux_command - command) > 0 && contador == 2) {
-      testID = 3;
-      sendReadings(testID);
-      contador = 3;
-      aux_command = 0;
-      Serial.println(counter);
-    }
-    if ((aux_command - command) > 0 && contador == 3) {
-      testID = 4;
-      sendReadings(testID);
-      contador = 4;
-      aux_command = 0;
-      Serial.println(counter);
-    }
+    touch_timer = millis();
+    readings_flag = false;
   }
   //---------------------------------------------------------
-  if (touch_timer >= (millis() - (touch_timer_length + readings_timer_offset))) {
+  if ((touch_timer >= (millis() - readings_timer_offset)) && (!readings_flag)) {
     getReadings();
-    //-------------------------------------------------------------
-    //to make zero afer each touch
-    if (contador == 4) {
-      testID = 0;
-      contador = 0;
-      aux_command = 0;
-    }
+    readings_flag = true;
   }
 }//end of the Loop
 
 //----------------------------------------------------------------------------------------------------------------
 
-void sendReadings(int testID_f ) {
+void sendReadings(int testID ) {
   Udp.beginPacket(ipServidor, 9999);  //Initiate transmission of data
   char buf[20];   // buffer to hold the string to append
-  sprintf(buf, "%lu", (long unsigned int) testID_f);  // appending the millis to create a char
+  sprintf(buf, "%lu", (long unsigned int) testID);  // appending the millis to create a char
   Udp.printf(buf);  // print the char
   //sending words
   Udp.printf("\r\n");   // End segment
