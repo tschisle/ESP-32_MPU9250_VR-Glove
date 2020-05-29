@@ -51,7 +51,7 @@ void setup() {
 }
 
 void loop() {
-  if (touch_timer >= (millis() - touch_timer_length)) { //checks the touch pin every 120 milliseconds
+  if (touch_timer <= (millis() - touch_timer_length)) { //checks the touch pin every 120 milliseconds
     touch_reading = touchRead(T7);
     Serial.print("T7  ");
     Serial.println(touch_reading);
@@ -85,7 +85,7 @@ void loop() {
     readings_flag = false;
   }
   //---------------------------------------------------------
-  if ((touch_timer >= (millis() - readings_timer_offset)) && (!readings_flag)) {
+  if ((touch_timer <= (millis() - readings_timer_offset)) && (!readings_flag)) {
     getReadings();
     readings_flag = true;
   }
