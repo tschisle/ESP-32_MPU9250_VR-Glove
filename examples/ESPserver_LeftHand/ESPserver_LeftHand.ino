@@ -7,6 +7,7 @@
  * - Make every Serial call compiled based off a defined symbol
  * - Replace touch on/off elseif's with a more robust system  
  * - Replace touch multiple tolerances with an autocalibrated value 
+ * - Replace/implement gesture recognization 
  */
 
 // Just test touch pin - Touch0 is T0 which is on GPIO 4
@@ -75,7 +76,7 @@ void setup() {
   T9_init = touchRead(T9);
   Serial.print("T9 init  ");
   Serial.println(T9_init);
-  delay(500); // delay to check the values in the serial monitor - needs to be removed
+  delay(500); // delay to check the values in the serial monitor
 }
 
 
@@ -168,5 +169,4 @@ void sendReadingsUnity(int testID) { //sends message to UNITY
   Udp.endPacket();
   Serial.print("testID  ");
   Serial.println(testID);
-
 }
