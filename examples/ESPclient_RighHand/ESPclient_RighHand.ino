@@ -24,6 +24,7 @@ const int set_point = 20; //example value based on several online tutorials
 int command = 0; //variable that contains the step
 char counter[255];
 int T7_init = 0;
+int touch_reading;
 
 //delay timers -
 unsigned long touch_timer;
@@ -50,10 +51,11 @@ void setup() {
 }
 
 void loop() {
-  if (touch_timer >= (millis() - touch_timer_length)) {
+  if (touch_timer >= (millis() - touch_timer_length)) { //checks the touch pin every 120 milliseconds
+    touch_reading = touchRead(T7);
     Serial.print("T7  ");
-    Serial.println(touchRead(T7));
-    if ((T7_init - touchRead(T7) ) > set_point) {
+    Serial.println(touch_reading);
+    if ((T7_init - touch_reading ) > set_point) {
       switch (command) {
         case 4:
           command = 0;
