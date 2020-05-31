@@ -52,7 +52,7 @@ class Touchpad
     bool hold_mask[2][2] = {{false, false}, {false, false}}; //prevents presses from being reported after a hold
     int press_value; //allows the tpmat to be fully cleared
   public:
-    initialize() {
+    void initialize() {
       int i, j, k;
       delay(300); //will likely fix the initial reading issue
       T9_init = touchRead(T9); //this first reading is wrong - taken again at the end of the readings
@@ -71,9 +71,8 @@ class Touchpad
       temp_touch_time_ref = 0;
     }
 
-    int update()
-    {
-      int i, j;
+    int update() {
+      int i, j, k;
       slide_detected = false;
       hold_detected = false;
       press_detected = false;
@@ -84,7 +83,7 @@ class Touchpad
 
          Additionally the detection code is written to allow gesture changes with continuous contact to the touchpad
 
-         Possible issue: The hold mask may not be completely robust as it's used now.    
+         Possible issue: The hold mask may not be completely robust as it's used now.
       */
       //Slide Detection -- Reports the last slid-over button
       if (num_touches > 1) {
@@ -179,6 +178,7 @@ class Touchpad
           return (0);
         }
       }
+      return(0);
     }
 
   private:
@@ -199,7 +199,7 @@ class Touchpad
             tpmat[0][j][k] = 1; //boolean TRUE
             touched = true;
             num_touches++;
-            slide_hold_timer = (int) inter_button_slide_time;
+            slide_timer = (int) inter_button_slide_time;
             if (hold_timer > 0) {
               hold_timer--;
             }
