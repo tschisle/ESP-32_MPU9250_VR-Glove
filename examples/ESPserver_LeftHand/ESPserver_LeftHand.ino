@@ -7,6 +7,11 @@
    ~ Replace touch multiple tolerances with an autocalibrated value
 */
 
+/* NOTES:
+   - Using the millis function to time function calls means this code is limited to running 
+     a max of 49.71 days before needing to be reset to avoid an overflow error
+*/
+
 // Just test touch pin - Touch0 is T0 which is on GPIO 4
 /* Press, hold, slide - trans number
    1  - press T7 - B - Right

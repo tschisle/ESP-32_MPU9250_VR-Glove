@@ -1,7 +1,11 @@
 //Left hand code - touch interactions - magnetic sensing and communiaction with Head mounted Device
 /* GOALS:
    - Make every Serial call compiled based off a defined symbol
-   - Add the sensor code
+*/
+
+/* NOTES:
+   - Using the millis function to time function calls means this code is limited to running 
+     a max of 49.71 days before needing to be reset to avoid an overflow error
 */
 
 #include <WiFi.h>
@@ -51,7 +55,7 @@ void setup() {
 }
 
 void loop() {
-  if (touch_timer <= (millis() - touch_timer_length)) { //checks the touch pin every 120 milliseconds
+  if (touch_timer <= (millis() - touch_timer_length)) { //checks the touch pin every 120 milliseconds (touch_timer_length)
     touch_reading = touchRead(T7);
     Serial.print("T7  ");
     Serial.println(touch_reading);
