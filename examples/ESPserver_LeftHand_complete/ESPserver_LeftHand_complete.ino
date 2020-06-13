@@ -8,7 +8,7 @@
 */
 
 /* NOTES:
-   - THIS HAND DOES NOT HANDLE SENSOR DATA
+   - THIS HAND DOES HANDLE SENSOR DATA (seemingly optimized for left-handed users?)
    - Using the millis function to time function calls means this code is limited to running 
      a max of 49.71 days before needing to be reset to avoid an overflow error
 */
