@@ -87,6 +87,12 @@ bool prev_pinch_min_cal = false; // Edge detection of flag for initializing vari
 
 MPU9250 myIMU(MPU9250_ADDRESS, I2Cport, I2Cclock);
 
+//delay timers -
+unsigned long touch_timer;
+int touch_timer_length = 125; //may cause issues with mismatched data types
+int readings_timer_offset = 5; //may cause issues with mismatched data types
+bool readings_flag = false; //this is done to avoid any case were the loop takes longer than a millisecond to complete
+
 //_____________________________________________________________________________________ TOUCH PAD OBJECT
 
 class Touchpad
@@ -301,8 +307,9 @@ const char * udpAddress = "10.0.0.43";
 byte packet[1];
 //Touch configuration
 int command = 0;
+int prevcommand; //exists since command serves two purposes and holds commands from both left and right gloves
 int aux_command = 0;
-
+int touch_reading;
 
 //_____________________________________________________________________________________  SETUP
 
@@ -349,28 +356,187 @@ void setup() {
 
 //______________________________________________________________________________________________________________ LOOP
 void loop() {
-  Serial.println(WiFi.localIP());
-  //Getting packages for calibration
-  int packetSize = Udp.parsePacket();
-  if (packetSize) {
-    int len = Udp.read(packetBuffer, 255);
-    if (len > 0) packetBuffer[len - 1] = 0;
-    Serial.print("Recibido(IP/Size/From RightHand): ");
-    Serial.print(Udp.remoteIP()); Serial.print(" / ");
-    Serial.print(packetSize); Serial.print(" / ");
-    Serial.println(packetBuffer);//has the command number (1 to 4) for calibration
-    Udp.beginPacket(Udp.remoteIP(), Udp.remotePort()); //sends confirmation message
-    //Udp.printf("received: ");
-    Udp.printf("RECIBIDOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO"); // sending command to the esp32-1
-    //Udp.printf(packetBuffer);
-    Udp.printf("\r\n");
-    Udp.endPacket();
-  }
   command = touch.update();
-  Serial.print("command  ");
-  Serial.println(command);
-  sendReadings(command); //sends a messace every cycle to the client 192, 168, 4, 10
-  sendReadingsUnity(command); //sends a messace every cycle to the client 192, 168, 4, 12
+  if ((touch_timer <= (millis() - readings_timer_offset)) && (!readings_flag)) {
+    prevcommand = command;
+    command = getReadings();
+    readings_flag = true;
+    if(command != -1){ 
+      sendReadings(command); //sends a messace every cycle to the client 192, 168, 4, 10
+      sendReadingsUnity(command); //sends a messace every cycle to the client 192, 168, 4, 12
+    }
+    if(prevcommand != 0){
+      sendReadings(prevcommand); //sends a messace every cycle to the client 192, 168, 4, 10
+      sendReadingsUnity(prevcommand); //sends a messace every cycle to the client 192, 168, 4, 12
+    }
+  }
+  if (command == '1') {
+    tilt_cal = true;
+    Serial.println("tilt_cal");
+  } else if (command == '2') {
+    pinch_max_cal = true;
+    Serial.println("pinch_max_cal");
+  } else if (command == '3') {
+    pinch_min_cal = true;
+    Serial.println("pinch_min_cal");
+  } else if (command == '4') {
+    if (!pinch_gesture) {
+      pinch_gesture = true;
+      Serial.println("pinch_gesture ON");
+    } else {
+      pinch_gesture = false;
+      Serial.println("pinch_gesture OFF");
+    }
+  }
+  if (millis() >= pinch_tilt_time) {
+    pinch_tilt_time = millis() + pinch_tilt_update;
+    if (myIMU.readByte(MPU9250_ADDRESS, INT_STATUS) & 0x01)
+    {
+      myIMU.readAccelData(myIMU.accelCount);  // Read the x/y/z adc values
+      // Calculate the accleration value into actual g's, this depends on scale being set
+      myIMU.ax = (float)myIMU.accelCount[0] * myIMU.aRes; // - myIMU.accelBias[0];
+      myIMU.ay = (float)myIMU.accelCount[1] * myIMU.aRes; // - myIMU.accelBias[1];
+      myIMU.az = (float)myIMU.accelCount[2] * myIMU.aRes; // - myIMU.accelBias[2];
+      myIMU.readGyroData(myIMU.gyroCount);  // Read the x/y/z adc values
+      // Calculate the gyro value into actual degrees per second, this depends on scale being set
+      myIMU.gx = (float)myIMU.gyroCount[0] * myIMU.gRes;
+      myIMU.gy = (float)myIMU.gyroCount[1] * myIMU.gRes;
+      myIMU.gz = (float)myIMU.gyroCount[2] * myIMU.gRes;
+      myIMU.readMagData(myIMU.magCount);  // Read the x/y/z adc values
+      // Calculate the magnetometer values in milliGauss
+      // Include factory calibration per data sheet and user environmental corrections
+      // Get actual magnetometer value, this depends on scale being set
+      myIMU.mx = (float)myIMU.magCount[0] * myIMU.mRes
+                 * myIMU.factoryMagCalibration[0] - myIMU.magBias[0];
+      myIMU.my = (float)myIMU.magCount[1] * myIMU.mRes
+                 * myIMU.factoryMagCalibration[1] - myIMU.magBias[1];
+      myIMU.mz = (float)myIMU.magCount[2] * myIMU.mRes
+                 * myIMU.factoryMagCalibration[2] - myIMU.magBias[2];
+    }
+
+    acc_mag = sqrt((myIMU.ax * myIMU.ax) + (myIMU.ay * myIMU.ay) + (myIMU.az * myIMU.az));
+    acc_theta = theta(myIMU.az, acc_mag); // radians/pi
+    acc_phi = phi(myIMU.ay, myIMU.ax); // radians/pi
+    if (tilt_cal) {
+      acc_theta_cal = acc_theta;
+      acc_phi_cal = acc_phi;
+      Serial.println("Tilt calibration complete");
+      tilt_cal = false;
+    }
+    if (abs(acc_theta_cal - acc_theta) > tilt_tolerance) { // you can add an additional condition to fine tine the tilt condition from a cone to cone rotated around an axis
+      tilt = true;
+      digitalWrite(13, HIGH);
+      //Serial.println("+");
+    } else {
+      tilt = false;
+      digitalWrite(13, LOW);
+    }
+    if (pinch_max_cal || pinch_min_cal || pinch_gesture) { //only reads from magnetometer and performs math if prompted by flags
+      if ((prev_pinch_max_cal != pinch_max_cal) || (prev_pinch_min_cal != pinch_min_cal)) { //edge condition - Initialization
+        magavg[0] = 0;
+        magavg[1] = 0;
+        magavg[2] = 0;
+        counter = 0;
+        do {
+          magavg[0] = myIMU.mx + magavg[0];
+          magavg[1] = myIMU.my + magavg[1];
+          magavg[2] = myIMU.mz + magavg[2];
+        } while (counter++ < (avgsam - 1));
+        if ((prev_pinch_max_cal != pinch_max_cal)) {//edge condition of first calibration - bias setting
+          manmagbias[0] = magavg[0] / avgsam;
+          manmagbias[1] = magavg[1] / avgsam;
+          manmagbias[2] = magavg[2] / avgsam;
+          Serial.println("Pinch MAX calibration complete");
+          pinch_max_cal = false;
+        } else { //reference setting
+          magmin = sqrt(pow(magavg[0] / avgsam, 2) + pow(magavg[1] / avgsam, 2) + pow(magavg[2] / avgsam, 2));
+          Serial.println("Pinch MIN calibration complete");
+          pinch_min_cal = false;
+        }
+        magavg[0] = 0;
+        magavg[1] = 0;
+        magavg[2] = 0;
+        counter = 0;
+        samcoun = 0;
+        pinch_max_cal = false; //clears flag
+        pinch_min_cal = false; //clears flag
+        prev_pinch_max_cal = pinch_max_cal; //for edge detection
+        prev_pinch_min_cal = pinch_min_cal; //for edge detection
+      } else {
+        myIMU.mx = myIMU.mx - manmagbias[0];
+        myIMU.my = myIMU.my - manmagbias[1];
+        myIMU.mz = myIMU.mz - manmagbias[2];
+        magavg[0] = myIMU.mx + magavg[0];
+        magavg[1] = myIMU.my + magavg[1];
+        magavg[2] = myIMU.mz + magavg[2];
+        if (counter++ == (avgsam - 1)) {
+          magavg[0] = magavg[0] / avgsam;
+          magavg[1] = magavg[1] / avgsam;
+          magavg[2] = magavg[2] / avgsam;
+          //converts from 3 coordinates to a magnitude.  This is possible since we're effectively moving the origin to the max position,
+          //however we're now operating under the assumption that the curve from the finger movement can be adequately approximated with a line
+          magmag = sqrt((magavg[0] * magavg[0]) + (magavg[1] * magavg[1]) + (magavg[2] * magavg[2]));
+          //clearing previous values and shifting mag data
+          for (int x = 0; x < samples; x++) {
+            if (x < (samples - 1)) {
+              sammat[x] = sammat[x + 1];
+            }
+            least_square_avg = 0;
+            least_square_sum_comp[0] = 0;
+          }
+          sammat[samples - 1] = magmag;
+          //finding average mag values
+          for (int x = 0; x < samples; x++) {
+            least_square_avg = least_square_avg + sammat[x];
+          }
+          least_square_avg = least_square_avg / samples;
+          //calculating least square values
+          for (int x = 0; x < samples; x++) {
+            least_square_mat[1][x] = sammat[x] - least_square_avg;
+            least_square_mat[2][x] = least_square_mat[0][x] * least_square_mat[1][x];
+          }
+          for (int x = 0; x < samples; x++) {
+            least_square_sum_comp[0] = least_square_sum_comp[0] + least_square_mat[2][x];
+          }
+          least_square_slope_inter[0] = least_square_sum_comp[0] / least_square_sum_comp[1]; //slopes
+          least_square_slope_inter[1] = least_square_avg - (least_square_slope_inter[0] * ((samples + 1) / 2)); //intercept
+          //approximating current mag data from best fit LINE and reporting movement percentage
+          //this step provides the unitless value
+          approximation = (least_square_slope_inter[0] * samples) + least_square_slope_inter[1];
+          percentage = (1 - (approximation / magmin)) * 100; //finds percentage from max to min, inverts the value, then multiples it by 100
+          if (percentage < 0) {
+            percentage = 0;
+          } else if (percentage > 100) {
+            percentage = 100;
+          }
+          percentage = map(percentage, 55, 85, 0, 100); //quick fix
+          if (percentage < 0) {
+            percentage = 0;
+          } else if (percentage > 100) {
+            percentage = 100;
+          }
+          Serial.print("percent = ");
+          Serial.println((uint8_t)percentage);
+          //-=-=-=-=-=-=-=-=-=-=-=-    OUTPUT
+          sendReadings(percentage); //sends a messace every cycle to the client 192, 168, 4, 10
+          sendReadingsUnity(percentage); //sends a messace every cycle to the client 192, 168, 4, 12
+          //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+          //clearing averaging variables and counter
+          magavg[0] = 0;
+          magavg[1] = 0;
+          magavg[2] = 0;
+          counter = 0;
+        } else if (counter > avgsam) { //Safety condition to ensure data intigrity under counter fault
+          magavg[0] = 0;
+          magavg[1] = 0;
+          magavg[2] = 0;
+          counter = 0;
+        }
+      }
+    }
+    prev_pinch_max_cal = pinch_max_cal; //for edge detection
+    prev_pinch_min_cal = pinch_min_cal; //for edge detection
+  }
 }
 
 
@@ -392,6 +558,23 @@ void sendReadingsUnity(int testID) { //sends message to UNITY
   Udp.beginPacket(ipCliente3, port); //send package to the desired IP address
   Udp.write(packet,1);
   Udp.endPacket();
+}
+
+//______________________________________________________________________________________________________________ GET READINGS
+int getReadings() {
+  int packetSize = Udp.parsePacket();   // Size of packet to receive
+  int len = -1; //from right hand
+  if (packetSize) {       // If we received a package
+    len = Udp.read(packetBuffer, 255);
+    if (len > 0) packetBuffer[len - 1] = 0;
+    Serial.print("RECIBIDO(IP/Port/Size/Datos11111): ");
+    Serial.print(Udp.remoteIP()); Serial.print(" / ");
+    Serial.print(Udp.remotePort()); Serial.print(" / ");
+    Serial.print(packetSize); Serial.print(" / ");
+    Serial.println(packetBuffer);
+  }
+  Serial.println("");
+  return(len); //-1 when nothing is recieved
 }
 
 //______________________________________________________________________________________________________________ THETA
