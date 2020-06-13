@@ -1,3 +1,4 @@
+#define samples 10  //how many averaged sample clusters used to find the slope
 #include "MPU9250_ESP32.h"
 #include <Wire.h>
 #define I2Cclock 400000
@@ -17,7 +18,6 @@ char sinput;
 float magavg[3] = {0, 0, 0};
 int counter = 0;
 const int avgsam = 3; //how many samples to average
-const int samples = 10; //how many averaged sample clusters used to find the slope
 float least_square_mat[4][samples]; //used to find the slope of the averaged sample clusters   1: sami - samavg 2: magi-magavg 3: 1*2 4: 1*1
 float least_square_avg; //used to find the slope of the averaged sample clusters
 float least_square_sum_comp[2]; //used to find the slope of the averaged sample clusters
