@@ -287,12 +287,18 @@ class Touchpad
 WiFiUDP Udp; // Creation of wifi Udp instance
 Touchpad touch; //Creates touchpad object
 char packetBuffer[255];
-unsigned int localPort = 9999;
-const char *ssid =  "NETGEAR36-5G";// "NETGEAR36-5G";
-const char *password = "pastelstreet317";
+const int port = 8888;
+//const char *ssid =  "NETGEAR36-5G";// "NETGEAR36-5G";
+//const char *password = "pastelstreet317";
+const char *ssid =  "Apt5";// "NETGEAR36-5G";
+const char *password = "123srysry1234";
 IPAddress ipCliente (192, 168, 4, 10);   // right hand glove IP address to send messages directly
 //IPAddress ipCliente3(192, 168, 4, 12);   // right hand glove IP address to send messages directly
-IPAddress ipCliente3(192, 168, 1, 8);  //UNITY client ip
+//IPAddress ipCliente3(192, 168, 1, 8);  //UNITY client ip
+IPAddress ipCliente3(10, 0, 0, 143);  //UNITY client ip
+const char * udpAddress = "10.0.0.43";
+//int testID = 0;
+byte packet[1];
 //Touch configuration
 int command = 0;
 int aux_command = 0;
@@ -304,7 +310,7 @@ void setup() {
   //wifi setup
   Serial.begin(115200);
   WiFi.softAP(ssid, password);  // ESP-32 as access point
-  Udp.begin(localPort);
+  Udp.begin(port);
   //touch sensing setup
   Serial.println("ESP32 Touch Test");
   touch.initialize();
@@ -373,30 +379,19 @@ void sendReadings(int testID) { //sends message to the right hand
   Udp.beginPacket(ipCliente, 9999); //send package to the desired IP address
   Udp.printf("for right hand: ");
   char buf[20];   // buffer to hold the string to append
-  //unsigned long testID = 2015;
   sprintf(buf, "%lu", (long unsigned int) testID);  // appending the testID to create a char
   Udp.printf(buf);  // send the char
-  //sending words
   Udp.printf("\r\n");   // End segment
   Udp.endPacket();
-  Serial.print("testID  ");
-  Serial.println(testID);
 }
 
 //______________________________________________________________________________________________________________ SEND READINGS - UNITY
 void sendReadingsUnity(int testID) { //sends message to UNITY
   //Send Package to desired Ip
-  Udp.beginPacket(ipCliente3, 9999); //send package to the desired IP address
-  Udp.printf("for UNITY : ");
-  char buf[20];   // buffer to hold the string to append
-  sprintf(buf, "%lu", (long unsigned int) testID);  // appending the testID to create a char
-  //Udp.printf(buf);  // send the char
-  Udp.write(testID);
-  //sending words
-  Udp.printf("\r\n");   // End segment
+  packet[0] = testID;
+  Udp.beginPacket(ipCliente3, port); //send package to the desired IP address
+  Udp.write(packet,1);
   Udp.endPacket();
-  Serial.print("testID  ");
-  Serial.println(testID);
 }
 
 //______________________________________________________________________________________________________________ THETA
