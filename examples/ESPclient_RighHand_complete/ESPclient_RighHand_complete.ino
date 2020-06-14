@@ -1,11 +1,19 @@
 //Left hand code - touch interactions - magnetic sensing and communiaction with Head mounted Device
 /* GOALS:
    - Make every Serial call compiled based off a defined symbol
+   - "readings" sections of the code are apparently for debugging and should be elimenated
 */
 
 /* NOTES:
    - Using the millis function to time function calls means this code is limited to running 
      a max of 49.71 days before needing to be reset to avoid an overflow error
+   - "Udp.parsePacket()" slows TimerOne, timing issues for communication dependent on TimerOne
+     or other peripherals may occur because of call this function.  The solution is to disable
+     the TimerOne interrupt before the function call and re-enabling TimerOne interrupts afterwards.
+   - Select/Deselect (15)
+   - Object Orientation (14)
+   - Pinch Calibration (13)
+   - Presses are registered on the edge from NOT touching the button to TOUCHING the button
 */
 
 #include <WiFi.h>
@@ -27,59 +35,15 @@ IPAddress Subnet(255, 255, 255, 0);
 const int set_point = 20; //example value based on several online tutorials
 int command = 0; //variable that contains the step
 char counter[255];
-int T7_init = 0;
-int touch_reading;
+int T9_init = 0;  //3 - Select/Deselect
+int T8_init = 0;  //2 - Orientation
+int T7_init = 0;  //1 - Pinch
 
 // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- 
 
 //Debug Input/Flag Trigger
 char input;
-
-//Timer
-unsigned long pinch_tilt_time = 0;
-int pinch_tilt_update = 25;
-
-//Magnetometer Variables
-float position = 1;
-char sinput;
-float magavg[3] = {0, 0, 0};
-int counter = 0;
-const int avgsam = 3; //how many samples to average
-const int samples = 10; //how many averaged sample clusters used to find the slope
-float least_square_mat[4][samples]; //used to find the slope of the averaged sample clusters   1: sami - samavg 2: magi-magavg 3: 1*2 4: 1*1
-float least_square_avg; //used to find the slope of the averaged sample clusters
-float least_square_sum_comp[2]; //used to find the slope of the averaged sample clusters
-float least_square_slope_inter[2]; //holds slope and intercept values to approximate current value
-float approximation; //holds final approximated value
-float percentage; //using variable to allow for data validation
-float magmag; //holds the magnitude value
-float sammat[samples]; //holds the averaged samples in a matrix
-float manmagbias[3]; //temporary magnetometer bias to zero each value to simplify gesture analysis
-float magmin; //temporarily holds the min reference for the magnetometer
-int prevarr[3] = {0, 0, 0};
-int samcoun = 0;
-float sammin[3] = {0, 0, 0};
-float sammax[3] = {0, 0, 0};
-const float tolerance = 60; //
-
-//Accelerometer Direction
-float acc_theta_cal = 0;
-float acc_theta = 0;
-float acc_mag = 0;
-float acc_phi_cal = 0;
-float acc_phi = 0;
-
-//Flags / Conditions
-bool tilt_cal = true; //Trigger for calibrating orientation (automatically turned off after calibration)
-const float tilt_tolerance = 0.25; //Radians/pi, currently checking delta randians from calibration vector
-bool tilt = false; //Flag for reporting when hand is tilted outside of tolerance
-bool pinch_max_cal = false; //Trigger for calibrating max pinch locaiton (automatically turned off after calibration)
-bool pinch_min_cal = false; //Trigger for calibrating min pinch location (automatically turned off after calibration)
-bool pinch_gesture = false; //Trigger for pinch gesture (automatically turned on after min calibration, REQUIRES EXTERNAL STOPPING CONDITION)
-bool prev_pinch_max_cal = false; // Edge detection of flag for initializing variables & counters
-bool prev_pinch_min_cal = false; // Edge detection of flag for initializing variables & counters
-
-MPU9250 myIMU(MPU9250_ADDRESS, I2Cport, I2Cclock);
+bool touch_flag[2][3] = {{false, false, false},{false, false, false}}; //flags for touch pins, edge detection
 
 //delay timers -
 unsigned long touch_timer;
@@ -98,8 +62,9 @@ void setup() {
   //initial reading of the sensors
   Serial.print("Initial Values  ");
   T7_init = touchRead(T7);
-  Serial.print("T7 init ");
-  Serial.println(T7_init);
+  T8_init = touchRead(T8);
+  T9_init = touchRead(T9);
+  // -=-=-=-=-=-=-=-=-
   delay(600);
   //Timer Initializations
   touch_timer = millis();
@@ -107,34 +72,26 @@ void setup() {
 
 void loop() {
   if (touch_timer <= (millis() - touch_timer_length)) { //checks the touch pin every 120 milliseconds (touch_timer_length)
-    touch_reading = touchRead(T7);
-    Serial.print("T7  ");
-    Serial.println(touch_reading);
-    if ((T7_init - touch_reading ) > set_point) {
-      switch (command) {
-        case 4:
-          command = 0;
-          break;
-        case 3:
-          sendReadings(4);
-          command = 4;
-          Serial.println(counter);
-          break;
-        case 2:
-          sendReadings(3);
-          command = 3;
-          Serial.println(counter);
-          break;
-        case 1:
-          sendReadings(2);
-          command = 2;
-          Serial.println(counter);
-          break;
-        default:
-          sendReadings(1);
-          command = 1;
-          Serial.println(counter);
-      }
+    if ((T7_init - touchRead(T7) ) > set_point) {
+      touch_flag[0][0] = true;   //1 - Pinch   
+    }
+    if ((T8_init - touchRead(T8) ) > set_point) {
+      touch_flag[0][1] = true;     //2 - Orientation 
+    }
+    if ((T9_init - touchRead(T9) ) > set_point) {
+      touch_flag[0][2] = true;     //3 - Select/Deselect
+    }
+    if(touch_flag[0][0] != touch_flag[1][0]){
+      command = 13; //1 - Pinch  
+    }
+    if(touch_flag[0][0] != touch_flag[1][0]){
+      command = 14; //2 - Orientation 
+    }
+    if(touch_flag[0][0] != touch_flag[1][0]){
+      command = 15; //3 - Select/Deselect
+    }
+    for(int x = 0; x < 3; x++){
+      touch_flag[1][x] = touch_flag[0][x];
     }
     touch_timer = millis();
     readings_flag = false;
@@ -146,8 +103,7 @@ void loop() {
   }
 }//end of the Loop
 
-//----------------------------------------------------------------------------------------------------------------
-
+//______________________________________________________________________________________________________________ SEND READINGS
 void sendReadings(int testID ) {
   Udp.beginPacket(ipServidor, 9999);  //Initiate transmission of data
   char buf[20];   // buffer to hold the string to append
@@ -160,6 +116,7 @@ void sendReadings(int testID ) {
   Serial.println(buf);
 }
 
+//______________________________________________________________________________________________________________ GET READINGS
 void getReadings() {
   int packetSize = Udp.parsePacket();   // Size of packet to receive
   if (packetSize) {       // If we received a package
@@ -172,4 +129,32 @@ void getReadings() {
     Serial.println(packetBuffer);
   }
   Serial.println("");
+}
+
+//______________________________________________________________________________________________________________ THETA
+float theta(float z, float mag) {
+  return ((acos(z / mag)) / 3.14159265); // radians/pi
+}
+
+//______________________________________________________________________________________________________________ PHI
+float phi(float x, float y) {
+  float output = 0;
+  if (y == 0) {
+    if (x > 0) {
+      output = 0;
+    } else if (x < 0) {
+      output = 1;
+    } else {
+      output = 0; //if both x and y are 0
+    }
+  } else if (x == 0) {
+    if (y > 0) {
+      output = 0.5;
+    } else if (y < 0) {
+      output = 1.5;
+    }
+  } else {
+    output = (atan(y / x) / 3.14159265);
+  }
+  return(output);
 }
