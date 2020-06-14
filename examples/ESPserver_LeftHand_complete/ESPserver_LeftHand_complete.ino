@@ -241,7 +241,7 @@ class Touchpad
           return (press_value + 4);
         } else if (hold_detected) {
           return (press_value + 8);
-        } else if (hold_detected) {
+        } else if (press_detected) {
           return (press_value);
         } else {
           return (0);
