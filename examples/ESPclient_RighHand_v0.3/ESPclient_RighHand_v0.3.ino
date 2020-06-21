@@ -107,6 +107,8 @@ void loop() {
     }
     touch_timer = millis();
     readings_flag = false;
+    sendReadings(command);
+    sendReadings(command); //duplicated to ensure delivery
   }
   //---------------------------------------------------------
   if ((touch_timer <= (millis() - readings_timer_offset)) && (!readings_flag)) {
