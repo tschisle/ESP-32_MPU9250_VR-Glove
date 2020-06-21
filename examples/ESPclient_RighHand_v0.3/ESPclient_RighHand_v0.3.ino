@@ -84,22 +84,34 @@ void loop() {
     if (touch_flag[0][0] != touch_flag[1][0]) {
       if (touch_flag[0][0]) {
         command = 13; //1 - Pinch
-      }else{
+        sendReadings(command);
+        sendReadings(command); //duplicated to ensure delivery
+      } else {
         command = 113; //1 - Pinch
+        sendReadings(command);
+        sendReadings(command); //duplicated to ensure delivery
       }
     }
     if (touch_flag[0][1] != touch_flag[1][1]) {
       if (touch_flag[0][1]) {
         command = 14; //2 - Orientation
-      }else{
+        sendReadings(command);
+        sendReadings(command); //duplicated to ensure delivery
+      } else {
         command = 114; //2 - Orientation
+        sendReadings(command);
+        sendReadings(command); //duplicated to ensure delivery
       }
     }
     if (touch_flag[0][2] != touch_flag[1][2]) {
       if (touch_flag[0][2]) {
         command = 15; //3 - Select/Deselect
-      }else{
+        sendReadings(command);
+        sendReadings(command); //duplicated to ensure delivery
+      } else {
         command = 115; //3 - Select/Deselect
+        sendReadings(command);
+        sendReadings(command); //duplicated to ensure delivery
       }
     }
     for (int x = 0; x < 3; x++) {
@@ -107,8 +119,6 @@ void loop() {
     }
     touch_timer = millis();
     readings_flag = false;
-    sendReadings(command);
-    sendReadings(command); //duplicated to ensure delivery
   }
   //---------------------------------------------------------
   if ((touch_timer <= (millis() - readings_timer_offset)) && (!readings_flag)) {
