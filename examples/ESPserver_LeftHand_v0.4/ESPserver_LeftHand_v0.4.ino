@@ -87,6 +87,8 @@ bool prev_pinch_min_cal = false; // Edge detection of flag for initializing vari
 
 
 MPU9250 myIMU(MPU9250_ADDRESS, I2Cport, I2Cclock);
+void sendReadingsUnity(int);
+
 
 //delay timers -
 unsigned long touch_timer;
