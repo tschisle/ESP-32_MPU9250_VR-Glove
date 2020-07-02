@@ -22,59 +22,59 @@
 
 void PLSF_Filter::PLSF_Initialization(){ 
 //Precalculating static least square values HAS REDUNDANT ELEMENTS
-	for (int _x = 0; _x < samples; _x++) {
-		least_square_mat[0][_x] = _x - ((samples + 1) / 2);
+	for (int _x = 0; _x < pls_samples; _x++) {
+		least_square_mat[0][_x] = _x - ((pls_samples + 1) / 2);
 		least_square_mat[3][_x] = least_square_mat[0][_x] * least_square_mat[0][_x];
 		sammat[_x] = 0;
 	}
 	least_square_sum_comp[1] = 0;
-	for (int _x = 0; _x < samples; _x++) {
+	for (int _x = 0; _x < pls_samples; _x++) {
 		least_square_sum_comp[1] = least_square_sum_comp[1] + least_square_mat[3][_x];
 	}
 }
 
 float PLSF_Filter::PLSF_Update(float _input){	
 	//clearing previous values and shifting data
-    for (int x = 0; x < samples; x++) {
-        if (x < (samples - 1)) {
+    for (int x = 0; x < pls_samples; x++) {
+        if (x < (pls_samples - 1)) {
             sammat[x] = sammat[x + 1];
         }
         least_square_avg = 0;
         least_square_sum_comp[0] = 0;
     }
-    sammat[samples - 1] = _input;
+    sammat[pls_samples - 1] = _input;
     //finding average mag values
-    for (int x = 0; x < samples; x++) {
+    for (int x = 0; x < pls_samples; x++) {
         least_square_avg = least_square_avg + sammat[x];
     }
-    least_square_avg = least_square_avg / samples;
+    least_square_avg = least_square_avg / pls_samples;
     //calculating least square values
-    for (int x = 0; x < samples; x++) {
+    for (int x = 0; x < pls_samples; x++) {
         least_square_mat[1][x] = sammat[x] - least_square_avg;
         least_square_mat[2][x] = least_square_mat[0][x] * least_square_mat[1][x];
     }
-    for (int x = 0; x < samples; x++) {
+    for (int x = 0; x < pls_samples; x++) {
         least_square_sum_comp[0] = least_square_sum_comp[0] + least_square_mat[2][x];
     }
     least_square_slope_inter[0] = least_square_sum_comp[0] / least_square_sum_comp[1]; //slopes
-    least_square_slope_inter[1] = least_square_avg - (least_square_slope_inter[0] * ((samples + 1) / 2)); //intercept
+    least_square_slope_inter[1] = least_square_avg - (least_square_slope_inter[0] * ((pls_samples + 1) / 2)); //intercept
     //approximating current mag data from best fit LINE and reporting movement percentage
-    approximation = (least_square_slope_inter[0] * samples) + least_square_slope_inter[1];
+    approximation = (least_square_slope_inter[0] * pls_samples) + least_square_slope_inter[1];
     //this step provides the unitless value
 }
 
 void PLSF_Filter::PLSF_Clear(){
 //Precalculating static least square values HAS REDUNDANT ELEMENTS
-	for (int _x = 0; _x < samples; _x++) {
+	for (int _x = 0; _x < pls_samples; _x++) {
 		least_square_mat[1][_x] = 0;
 		least_square_mat[2][_x] = 0;
 		sammat[_x] = 0;
 	}
 	least_square_sum_comp[0] = 0;
 	least_square_sum_comp[1] = 0;
-	least_square_sum_avg = 0;
-	least_square_sum_sum_comp[0] = 0;
-	least_square_sum_sum_comp[1] = 0;
-	least_square_sum_slope_inter[0] = 0;
-	least_square_sum_slope_inter[1] = 0;
+	least_square_avg = 0;
+	least_square_sum_comp[0] = 0;
+	least_square_sum_comp[1] = 0;
+	least_square_slope_inter[0] = 0;
+	least_square_slope_inter[1] = 0;
 }
