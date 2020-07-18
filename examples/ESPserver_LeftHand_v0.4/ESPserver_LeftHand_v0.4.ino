@@ -307,6 +307,7 @@ void loop() {
   if ((touch_timer <= (millis() - readings_timer_offset))) {
     command = touch.update();
     right_cmd = getReadings();
+    touch_timer = millis();
   }
   // Select/Deselect
   if (right_cmd == 15) {
