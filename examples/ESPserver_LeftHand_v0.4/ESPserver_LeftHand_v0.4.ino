@@ -47,8 +47,8 @@ float position = 1;
 char sinput;
 float magavg[3] = {0, 0, 0};
 int counter = 0;
-const int avgsam = 3; //how many samples to average
-const int samples = 10; //how many averaged sample clusters used to find the slope
+const int avgsam = 1; //how many samples to average
+const int samples = 25; //how many averaged sample clusters used to find the slope
 float least_square_mat[4][samples]; //used to find the slope of the averaged sample clusters   1: sami - samavg 2: magi-magavg 3: 1*2 4: 1*1
 float least_square_avg; //used to find the slope of the averaged sample clusters
 float least_square_sum_comp[2]; //used to find the slope of the averaged sample clusters
@@ -406,7 +406,7 @@ void loop() {
           magavg[0] = myIMU.mx + magavg[0];
           magavg[1] = myIMU.my + magavg[1];
           magavg[2] = myIMU.mz + magavg[2];
-        } while (counter++ < (avgsam - 1));
+        } while (counter++ <= (avgsam - 1));
         if ((prev_pinch_max_cal != pinch_max_cal)) {//edge condition of first calibration - bias setting
           manmagbias[0] = magavg[0] / avgsam;
           manmagbias[1] = magavg[1] / avgsam;
