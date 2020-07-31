@@ -9,8 +9,8 @@
 */
 #include <WiFi.h>
 #include <WiFiUdp.h>
-#define NOWIFI 0
-#define NOSERIAL 1
+#define NOWIFI 1
+#define NOSERIAL 0
 //_____________________________________________________________________________________
 
 //WiFi configuration
@@ -19,6 +19,8 @@ WiFiUDP Udp; // Creation of wifi Udp instance
 char packetBuffer[255];
 
 const int port = 8888;
+
+bool seedtouchflag = true;
 
 const char *ssid =  "Apt5";// "NETGEAR36-5G";
 const char *password = "123srysry1234";
@@ -87,32 +89,36 @@ void loop()
 {
   touch_flag[0] = touch_flag[1];
   if (touchRead(T7) < 40) {
+    if(seedtouchflag){
+      randomSeed(millis());
+      seedtouchflag = false;
+    }
     touch_flag[1] = true;
     if (touch_flag[0] != touch_flag[1]) {
       if (rand() % 1000 < 20) {
-        randcommand = (rand() % 100) + 1000;
+        randcommand = (rand() % 100) + 100;
       } else {
         randcommand = tpcommands[rand() % 4][rand() % 2][rand() % 2];
       }
     }
-    if (randcommand < 1000) {
+    if (randcommand < 100) {
       if (touch_timer <= (millis() - 120)) {
         if (NOSERIAL == 0) {
-          Serial.println(randcommand);
+          Serial.println((byte)randcommand);
         }
         sendReadings(randcommand); //sends a messace every cycle to the client 192, 168, 4, 10
-        sendReadings3(randcommand); //sends a messace every cycle to the client 192, 168, 4, 12
+        sendbyteUnity(randcommand); //sends a messace every cycle to the client 192, 168, 4, 12
       }
     } else {
       if (touch_timer <= (millis() - 25)) {
         if (NOSERIAL == 0) {
-          Serial.println(randcommand);
+          Serial.println((byte)randcommand);
         }
         sendReadings(randcommand); //sends a messace every cycle to the client 192, 168, 4, 10
-        sendReadings3(randcommand); //sends a messace every cycle to the client 192, 168, 4, 12
-        if ((randcommand == 1100)) {
+        sendbyteUnity(randcommand); //sends a messace every cycle to the client 192, 168, 4, 12
+        if ((randcommand == 200)) {
           pinch_dir = true;
-        } else if ((randcommand == 1000)) {
+        } else if ((randcommand == 100)) {
           pinch_dir = false;
         } else if ((rand() % 100 < 2)) {
           pinch_dir = !pinch_dir;
@@ -128,17 +134,17 @@ void loop()
     touch_flag[1] = false;
     if (touch_flag[0] != touch_flag[1]) {
       touch_timer = millis() - 120;
-      if (randcommand < 1000) {
+      if (randcommand < 100) {
         if (NOSERIAL == 0) {
-          Serial.println(randcommand + 100);
+          Serial.println((byte)(randcommand + 50));
         }
-        sendReadings(randcommand + 100); //sends a messace every cycle to the client 192, 168, 4, 10
-        sendReadings3(randcommand + 100); //sends a messace every cycle to the client 192, 168, 4, 12
+        sendReadings(randcommand + 50); //sends a messace every cycle to the client 192, 168, 4, 10
+        sendbyteUnity(randcommand + 50); //sends a messace every cycle to the client 192, 168, 4, 12
         if (NOSERIAL == 0) {
-          Serial.println(randcommand + 100);
+          Serial.println((byte)(randcommand + 50));
         }
-        sendReadings(randcommand + 100); //sends a messace every cycle to the client 192, 168, 4, 10
-        sendReadings3(randcommand + 100); //sends a messace every cycle to the client 192, 168, 4, 12
+        sendReadings(randcommand + 50); //sends a messace every cycle to the client 192, 168, 4, 10
+        sendbyteUnity(randcommand + 50); //sends a messace every cycle to the client 192, 168, 4, 12
       }
     }
   }
@@ -164,24 +170,11 @@ void sendReadings(int testID) //sends message to the right hand
   }
 }
 
-//----------------------------------------------------------------
-void sendReadings3(int testID) //sends message to UNITY
-{
+//______________________________________________________________________________________________________________ SEND BYTE - UNITY
+void sendbyteUnity(byte testID) { //sends message to UNITY
   if (NOWIFI == 0) {
-    //Send Package to desired Ip
-    packet[0] = testID;
-
-    Udp.beginPacket(udpAddress, port); //send package to the desired IP address
-
-    //  Udp.printf("For HMD: ");
-    //  char buf[20];   // buffer to hold the string to append
-    //  //unsigned long testID = 2015;
-    //  sprintf(buf, "%lu", testID);  // appending the testID to create a char
-    //  Udp.printf(buf);  // send the char
-    //  //sending words
-    //  Udp.printf("\r\n");   // End segment
-    Udp.write(packet, 1);
-
+    Udp.beginPacket(ipCliente3, port); //send package to the desired IP address
+    Udp.write(testID);
     Udp.endPacket();
   }
 }
