@@ -87,7 +87,7 @@ void loop() {
         sendReadings(command);
         sendReadings(command); //duplicated to ensure delivery
       } else {
-        command = 113; //1 - Pinch
+        command = 63; //1 - Pinch
         sendReadings(command);
         sendReadings(command); //duplicated to ensure delivery
       }
@@ -98,7 +98,7 @@ void loop() {
         sendReadings(command);
         sendReadings(command); //duplicated to ensure delivery
       } else {
-        command = 114; //2 - Orientation
+        command = 64; //2 - Orientation
         sendReadings(command);
         sendReadings(command); //duplicated to ensure delivery
       }
@@ -109,7 +109,7 @@ void loop() {
         sendReadings(command);
         sendReadings(command); //duplicated to ensure delivery
       } else {
-        command = 115; //3 - Select/Deselect
+        command = 65; //3 - Select/Deselect
         sendReadings(command);
         sendReadings(command); //duplicated to ensure delivery
       }
