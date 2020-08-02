@@ -47,7 +47,7 @@ float position = 1;
 char sinput;
 float magavg[3] = {0, 0, 0};
 int counter = 0;
-const int avgsam = 10; //how many samples to average
+const int avgsam = 7; //how many samples to average
 float rolling_average[3][avgsam]; //rolling average to smooth pinch gesture (causes some delay so finding a happy medium is necessary) NOTE: rolling average before PLSF is exactly equivalent to a rolling average after PLSF
 int rolling_average_counter = 0;//tracks the location of the rolling average
 const int samples = 25; //how many averaged sample clusters used to find the slope
