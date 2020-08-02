@@ -66,6 +66,8 @@ void setup()
 {
   //wifi setup
   Serial.begin(115200);
+  pinMode(2, OUTPUT);
+  digitalWrite(2, LOW);
 
   if (NOWIFI == 0) {
     WiFi.begin(ssid, password);  // ESP-32 as access point
@@ -89,6 +91,7 @@ void loop()
 {
   touch_flag[0] = touch_flag[1];
   if (touchRead(T7) < 40) {
+    digitalWrite(2, HIGH);
     if(seedtouchflag){
       randomSeed(millis());
       seedtouchflag = false;
@@ -131,6 +134,7 @@ void loop()
       }
     }
   } else {
+    digitalWrite(2, LOW);
     touch_flag[1] = false;
     if (touch_flag[0] != touch_flag[1]) {
       touch_timer = millis() - 120;
