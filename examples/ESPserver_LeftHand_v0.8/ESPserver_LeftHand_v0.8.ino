@@ -95,7 +95,7 @@ void sendByteUnity(byte);
 
 //delay timers -
 unsigned long touch_timer;
-int touch_timer_length = 120; //may cause issues with mismatched data types
+int touch_timer_length = 40; //may cause issues with mismatched data types
 bool readings_flag = false; //this is done to avoid any case were the loop takes longer than a millisecond to complete
 const int mtravg = 5; //touch reading averages
 

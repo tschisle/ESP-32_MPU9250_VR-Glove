@@ -44,7 +44,7 @@ bool touch_flag[2][3] = {{false, false, false}, {false, false, false}}; //flags 
 
 //delay timers -
 unsigned long touch_timer;
-int touch_timer_length = 200; //may cause issues with mismatched data types
+int touch_timer_length = 40; //may cause issues with mismatched data types
 
 void setup() {
   pinMode(2, OUTPUT);
