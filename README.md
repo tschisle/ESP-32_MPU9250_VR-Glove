@@ -12,7 +12,14 @@ Repository Contents
 Example Briefs
 --------------
 
-* MPU9250_glove_demo &mdash; Basic operation of IMU in glove
+* MPU9250_glove &mdash; Basic operation of IMU in glove
+* MPU9250_glove_separated_filter &mdash; Initial attempt to make the filter into a useful library (backburner)
+* ESPclient_RightHand_v#.# &mdash; Code used in right hand glove
+* ESPserver_LeftHand_v#.# &mdash; Code used in left hand glove
+* ESPtest &mdash; Sends test commands to Unity to elimenate need for full set up for testing
+* ESPtouch &mdash; Test code for multiple touch register, also has a visualizer
+* WiFi_receiverv2 &mdash; Program used for debugging, can be used to debug right hand communication
+* WiFi_transmitterv2 &mdash; Program used for debugging
 
 Documentation
 --------------
