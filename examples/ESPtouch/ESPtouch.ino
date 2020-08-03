@@ -15,14 +15,14 @@
 int command = 0;
 int aux_command = 0;
 int set_point = 45;
-int T9_init = 0;
-int T8_init = 0;
-int T7_init = 0;
-int T6_init = 0;
+int T9_average = 0;
+int T8_average = 0;
+int T7_average = 0;
+int T6_average = 0;
 int touch_limit = 40;
-const int avgsam = 5;
-int rollingloc = 0;
-int rolling_average[3][avgsam]; //rolling average to smooth pinch gesture (causes some delay so finding a happy medium is necessary) NOTE: rolling average before PLSF is exactly equivalent to a rolling average after PLSF
+const int mtravg = 5;
+int mtrollingloc = 0;
+int mt_rolling_average[3][mtravg]; //rolling average to smooth pinch gesture (causes some delay so finding a happy medium is necessary) NOTE: rolling average before PLSF is exactly equivalent to a rolling average after PLSF
 
 
 //_____________________________________________________________________________________
@@ -39,46 +39,46 @@ void setup()
 //______________________________________________________________________________________________________________
 void loop()
 {
-  rolling_average[0][rollingloc] = touchRead(T7);
-  rolling_average[1][rollingloc] = touchRead(T8);
-  rolling_average[2][rollingloc] = touchRead(T9);
-  T7_init = 0;
-  T8_init = 0;
-  T9_init = 0;
-  for (int x = 0; x < avgsam; x++) {
-    T7_init = rolling_average[0][x] + T7_init;
-    T8_init = rolling_average[1][x] + T8_init;
-    T9_init = rolling_average[2][x] + T9_init;
+  mt_rolling_average[0][mtrollingloc] = touchRead(T7);
+  mt_rolling_average[1][mtrollingloc] = touchRead(T8);
+  mt_rolling_average[2][mtrollingloc] = touchRead(T9);
+  T7_average = 0;
+  T8_average = 0;
+  T9_average = 0;
+  for (int x = 0; x < mtravg; x++) {
+    T7_average = mt_rolling_average[0][x] + T7_average;
+    T8_average = mt_rolling_average[1][x] + T8_average;
+    T9_average = mt_rolling_average[2][x] + T9_average;
   }
-  T7_init = T7_init / avgsam;
-  T8_init = T8_init / avgsam;
-  T9_init = T9_init / avgsam;
-  rollingloc = (rollingloc + 1)%avgsam;
+  T7_average = T7_average / mtravg;
+  T8_average = T8_average / mtravg;
+  T9_average = T9_average / mtravg;
+  mtrollingloc = (mtrollingloc + 1)%mtravg;
   for (int x = 1; x < 50; x++) {
-    if (T7_init < (2 * x)) {
+    if (T7_average < (2 * x)) {
       Serial.print("7");
-      T7_init = 1000;
-    } else if (T8_init < (2 * x)) {
+      T7_average = 1000;
+    } else if (T8_average < (2 * x)) {
       Serial.print("8");
-      T8_init = 1000;
-    } else if (T9_init < (2 * x)) {
+      T8_average = 1000;
+    } else if (T9_average < (2 * x)) {
       Serial.print("9");
-      T9_init = 1000;
+      T9_average = 1000;
     } else {
       Serial.print(" ");
     }
   }
-  if (T7_init < (1000)) {
+  if (T7_average < (1000)) {
     Serial.print("7");
-    T7_init = 1000;
+    T7_average = 1000;
   }
-  if (T8_init < (1000)) {
+  if (T8_average < (1000)) {
     Serial.print("8");
-    T7_init = 1000;
+    T7_average = 1000;
   }
-  if (T9_init < (1000)) {
+  if (T9_average < (1000)) {
     Serial.print("9");
-    T7_init = 1000;
+    T7_average = 1000;
   }
   Serial.println("");
   /*
