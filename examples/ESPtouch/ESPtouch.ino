@@ -15,10 +15,9 @@
 int command = 0;
 int aux_command = 0;
 int set_point = 45;
-int T9_average = 0;
-int T8_average = 0;
-int T7_average = 0;
 int T6_average = 0;
+int T5_average = 0;
+int T7_average = 0;
 int touch_limit = 40;
 const int mtravg = 5;
 int mtrollingloc = 0;
@@ -40,30 +39,30 @@ void setup()
 void loop()
 {
   mt_rolling_average[0][mtrollingloc] = touchRead(T7);
-  mt_rolling_average[1][mtrollingloc] = touchRead(T8);
-  mt_rolling_average[2][mtrollingloc] = touchRead(T9);
+  mt_rolling_average[1][mtrollingloc] = touchRead(T5);
+  mt_rolling_average[2][mtrollingloc] = touchRead(T6);
   T7_average = 0;
-  T8_average = 0;
-  T9_average = 0;
+  T5_average = 0;
+  T6_average = 0;
   for (int x = 0; x < mtravg; x++) {
     T7_average = mt_rolling_average[0][x] + T7_average;
-    T8_average = mt_rolling_average[1][x] + T8_average;
-    T9_average = mt_rolling_average[2][x] + T9_average;
+    T5_average = mt_rolling_average[1][x] + T5_average;
+    T6_average = mt_rolling_average[2][x] + T6_average;
   }
   T7_average = T7_average / mtravg;
-  T8_average = T8_average / mtravg;
-  T9_average = T9_average / mtravg;
+  T5_average = T5_average / mtravg;
+  T6_average = T6_average / mtravg;
   mtrollingloc = (mtrollingloc + 1)%mtravg;
   for (int x = 1; x < 50; x++) {
     if (T7_average < (2 * x)) {
       Serial.print("7");
       T7_average = 1000;
-    } else if (T8_average < (2 * x)) {
-      Serial.print("8");
-      T8_average = 1000;
-    } else if (T9_average < (2 * x)) {
-      Serial.print("9");
-      T9_average = 1000;
+    } else if (T5_average < (2 * x)) {
+      Serial.print("5");
+      T5_average = 1000;
+    } else if (T6_average < (2 * x)) {
+      Serial.print("6");
+      T6_average = 1000;
     } else {
       Serial.print(" ");
     }
@@ -72,12 +71,12 @@ void loop()
     Serial.print("7");
     T7_average = 1000;
   }
-  if (T8_average < (1000)) {
-    Serial.print("8");
+  if (T5_average < (1000)) {
+    Serial.print("5");
     T7_average = 1000;
   }
-  if (T9_average < (1000)) {
-    Serial.print("9");
+  if (T6_average < (1000)) {
+    Serial.print("6");
     T7_average = 1000;
   }
   Serial.println("");
@@ -85,10 +84,10 @@ void loop()
     if (touchRead(T7) < touch_limit) {
       Serial.println("7");
     }
-    if (touchRead(T8) < touch_limit) {
+    if (touchRead(T5) < touch_limit) {
       Serial.println("8");
     }
-    if (touchRead(T9) < touch_limit) {
+    if (touchRead(T6) < touch_limit) {
       Serial.println("9");
     }*/
   delay(50);

@@ -25,11 +25,11 @@ const char *password = "planningisunderrated";
 IPAddress Left_IP (192, 168, 4, 1);   // Declaration of default IP for server
 IPAddress Right_IP (192, 168, 4, 10);   // Different IP than server
 IPAddress Subnet(255, 255, 255, 0);
-const int set_point = 40; //example value based on several online tutorials
+const int set_point = 50; //example value based on several online tutorials
 int command = 0; //variable that contains the step
-int T9_average = 0;  //3 - Select/Deselect
-int T8_average = 0;  //2 - Orientation
-int T7_average = 0;  //1 - Pinch
+int T7_average = 0;  //3 - Select/Deselect
+int T6_average = 0;  //2 - Orientation
+int T5_average = 0;  //1 - Pinch
 const int mtravg = 5;
 int mtrollingloc = 0;
 int mt_rolling_average[3][mtravg]; //rolling average to smooth pinch gesture (causes some delay so finding a happy medium is necessary) NOTE: rolling average before PLSF is exactly equivalent to a rolling average after PLSF
@@ -58,13 +58,13 @@ void setup() {
   Serial.println("ESP32 Touch Test");
   //initial reading of the sensors
   Serial.print("Initial Values  ");
+  T5_average = touchRead(T5);
+  T6_average = touchRead(T6);
   T7_average = touchRead(T7);
-  T8_average = touchRead(T8);
-  T9_average = touchRead(T9);
   for (int x = 0; x < mtravg; x++) {
-    mt_rolling_average[0][x] = T7_average;
-    mt_rolling_average[1][x] = T8_average;
-    mt_rolling_average[2][x] = T9_average;
+    mt_rolling_average[0][x] = T5_average;
+    mt_rolling_average[1][x] = T6_average;
+    mt_rolling_average[2][x] = T7_average;
   }
   // -=-=-=-=-=-=-=-=-
   delay(600);
@@ -75,23 +75,23 @@ void setup() {
 
 void loop() {
   if (touch_timer <= (millis() - touch_timer_length)) { //checks the touch pin every 120 milliseconds (touch_timer_length)
-    mt_rolling_average[0][mtrollingloc] = touchRead(T7);
-    mt_rolling_average[1][mtrollingloc] = touchRead(T8);
-    mt_rolling_average[2][mtrollingloc] = touchRead(T9);
+    mt_rolling_average[0][mtrollingloc] = touchRead(T5);
+    mt_rolling_average[1][mtrollingloc] = touchRead(T6);
+    mt_rolling_average[2][mtrollingloc] = touchRead(T7);
+    T5_average = 0;
+    T6_average = 0;
     T7_average = 0;
-    T8_average = 0;
-    T9_average = 0;
     for (int x = 0; x < mtravg; x++) {
-      T7_average = mt_rolling_average[0][x] + T7_average;
-      T8_average = mt_rolling_average[1][x] + T8_average;
-      T9_average = mt_rolling_average[2][x] + T9_average;
+      T5_average = mt_rolling_average[0][x] + T5_average;
+      T6_average = mt_rolling_average[1][x] + T6_average;
+      T7_average = mt_rolling_average[2][x] + T7_average;
     }
+    T5_average = T5_average / mtravg;
+    T6_average = T6_average / mtravg;
     T7_average = T7_average / mtravg;
-    T8_average = T8_average / mtravg;
-    T9_average = T9_average / mtravg;
     mtrollingloc = (mtrollingloc + 1) % mtravg;
     if (touchstepper == 0) {
-      if (T7_average < set_point) {
+      if (T5_average < set_point) {
         touch_flag[0][0] = true;   //1 - Pinch
         digitalWrite(2, HIGH);
       } else {
@@ -99,7 +99,7 @@ void loop() {
       }
     }
     if (touchstepper == 1) {
-      if (T8_average < set_point) {
+      if (T6_average < set_point) {
         touch_flag[0][1] = true;     //2 - Orientation
         digitalWrite(2, HIGH);
       } else {
@@ -107,7 +107,7 @@ void loop() {
       }
     }
     if (touchstepper == 2) {
-      if (T8_average < set_point) {
+      if (T7_average < set_point) {
         touch_flag[0][2] = true;     //3 - Select/Deselect
         digitalWrite(2, HIGH);
       } else {
