@@ -122,8 +122,8 @@ class Touchpad
         0 - Normal; 1 - Tilt; 2 - Rotation; 3 - Rotation w/ Tilt
     */
     const unsigned long command_report_interval_time = 100; //number of milliseconds between each press command report
-    const int set_point_h = 45; //value based from trial and error
-    const int set_point_l = 10; //value based from trial and error
+    const int set_point_h = 40; //value based from trial and error
+    const int set_point_l = 40; //value based from trial and error
     int T9_average = 0;  //4 - Bottom
     int T8_average = 0;  //3 - Top
     int T7_average = 0;  //1 - Right
@@ -255,7 +255,7 @@ class Touchpad
       tpmat[0][1][1] = T9_average; //4 - Bottom
       for (j = 0; j < 2; j++) {
         for (k = 0; k < 2; k++) {
-          if (tpmat[0][j][k] > ((set_point_h + set_point_l) / 2)) {
+          if (tpmat[0][j][k] < ((set_point_h + set_point_l) / 2)) {
             tpmat[0][j][k] = 1; //boolean TRUE
           } else {
             tpmat[0][j][k] = 0; //boolean FALSE
