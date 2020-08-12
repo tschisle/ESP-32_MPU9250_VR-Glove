@@ -270,6 +270,7 @@ WiFiUDP Udp; // Creation of wifi Udp instance
 Touchpad touch; //Creates touchpad object
 byte packetBuffer[255];
 int bufloc = 0;
+const int connect_attempts = 40; //each attempt takes 0.5 sec
 const int port = 11000;
 const char *ssid =  "ZyXEL8C1BF8";// "NETGEAR36-5G";
 const char *password = "FFVTWR3NKNP77";
@@ -291,7 +292,6 @@ int touch_reading;
 void setup() {
   //wifi setup
   Serial.begin(115200);
-  Udp.begin(port);
   //touch sensing setup
   Serial.println("ESP32 Touch Test");
   touch.initialize();
@@ -308,19 +308,19 @@ void setup() {
           digitalWrite(2, LOW);
         }
       } else if (x < 200) {
-        if (x % 3) {
+        if (x % 16) {
           digitalWrite(2, HIGH);
         } else {
           digitalWrite(2, LOW);
         }
       } else if (x < 300) {
-        if (x % 4) {
+        if (x % 48) {
           digitalWrite(2, HIGH);
         } else {
           digitalWrite(2, LOW);
         }
       } else if (x < 400) {
-        if (x % 3) {
+        if (x % 16) {
           digitalWrite(2, HIGH);
         } else {
           digitalWrite(2, LOW);
@@ -336,8 +336,9 @@ void setup() {
     }
   }
   WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED)
-  {
+  Udp.begin(port);
+  int connect_attempts_counter = 0;
+  while ((WiFi.status() != WL_CONNECTED) && (connect_attempts_counter++ < connect_attempts)) {
     for (int x = 0; x < 500; x ++) {
       if (x < 100) {
         if (x % 2) {
@@ -346,19 +347,19 @@ void setup() {
           digitalWrite(2, LOW);
         }
       } else if (x < 200) {
-        if (x % 3) {
+        if (x % 16) {
           digitalWrite(2, HIGH);
         } else {
           digitalWrite(2, LOW);
         }
       } else if (x < 300) {
-        if (x % 4) {
+        if (x % 48) {
           digitalWrite(2, HIGH);
         } else {
           digitalWrite(2, LOW);
         }
       } else if (x < 400) {
-        if (x % 3) {
+        if (x % 16) {
           digitalWrite(2, HIGH);
         } else {
           digitalWrite(2, LOW);
@@ -369,6 +370,15 @@ void setup() {
         } else {
           digitalWrite(2, LOW);
         }
+      }
+      if(x == 100){
+        Serial.print("Connecting");
+      }else if(x == 200){
+        Serial.print(" .");
+      }else if(x == 300){
+        Serial.print(" .");
+      }else if(x == 400){
+        Serial.println(" .");
       }
       delay(1);
     }
