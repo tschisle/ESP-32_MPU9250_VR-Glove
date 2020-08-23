@@ -124,7 +124,7 @@ class Touchpad
     const unsigned long command_report_interval_time = 100; //number of milliseconds between each press command report
     const int set_point_h = 40; //value based from trial and error
     const int set_point_l = 40; //value based from trial and error
-    int T9_average = 0;  //4 - Bottom
+    int T4_average = 0;  //4 - Bottom
     int T8_average = 0;  //3 - Top
     int T7_average = 0;  //1 - Right
     int T6_average = 0;  //2 - Left
@@ -136,16 +136,15 @@ class Touchpad
     void initialize() {
       int i, j, k;
       delay(300); //will likely fix the initial reading issue
-      T9_average = touchRead(T9); //this first reading is wrong - taken again at the end of the readings
       T8_average = touchRead(T8); //3 - Y - Top
       T7_average = touchRead(T7); //1 - B - Right
       T6_average = touchRead(T6); //2 - X - Left
-      T9_average = touchRead(T9); //4 - A - Bottom
+      T4_average = touchRead(T4); //4 - A - Bottom
       for (int x = 0; x < mtravg; x++) {
         mt_rolling_average[0][x] = T6_average;
         mt_rolling_average[1][x] = T7_average;
         mt_rolling_average[2][x] = T8_average;
-        mt_rolling_average[3][x] = T9_average;
+        mt_rolling_average[3][x] = T4_average;
       }
       for (j = 0; j < 2; j++) {
         for (k = 0; k < 2; k++) {
@@ -233,26 +232,26 @@ class Touchpad
       mt_rolling_average[0][mtrollingloc] = touchRead(T6);
       mt_rolling_average[1][mtrollingloc] = touchRead(T7);
       mt_rolling_average[2][mtrollingloc] = touchRead(T8);
-      mt_rolling_average[3][mtrollingloc] = touchRead(T9);
+      mt_rolling_average[3][mtrollingloc] = touchRead(T4);
       T6_average = 0;
       T7_average = 0;
       T8_average = 0;
-      T9_average = 0;
+      T4_average = 0;
       for (int x = 0; x < mtravg; x++) {
         mt_rolling_average[0][x] = T6_average;
         mt_rolling_average[1][x] = T7_average;
         mt_rolling_average[2][x] = T8_average;
-        mt_rolling_average[3][x] = T9_average;
+        mt_rolling_average[3][x] = T4_average;
       }
       T6_average = T6_average / mtravg;
       T7_average = T7_average / mtravg;
       T8_average = T8_average / mtravg;
-      T9_average = T9_average / mtravg;
+      T4_average = T4_average / mtravg;
       mtrollingloc = (mtrollingloc + 1) % mtravg;
       tpmat[0][0][0] = T8_average; //3 - Top
       tpmat[0][0][1] = T7_average; //1 - Right
       tpmat[0][1][0] = T6_average; //2 - Left
-      tpmat[0][1][1] = T9_average; //4 - Bottom
+      tpmat[0][1][1] = T4_average; //4 - Bottom
       for (j = 0; j < 2; j++) {
         for (k = 0; k < 2; k++) {
           if (tpmat[0][j][k] < ((set_point_h + set_point_l) / 2)) {
@@ -302,35 +301,15 @@ void setup() {
   if (!WiFi.config(Left_IP, gateway, subnet, primaryDNS, secondaryDNS)) {
     for (int x = 0; x < 500; x ++) {
       if (x < 100) {
-        if (x % 2) {
-          digitalWrite(2, HIGH);
-        } else {
-          digitalWrite(2, LOW);
-        }
+        digitalWrite(2, HIGH);
       } else if (x < 200) {
-        if (x % 16) {
-          digitalWrite(2, HIGH);
-        } else {
-          digitalWrite(2, LOW);
-        }
+        digitalWrite(2, LOW);
       } else if (x < 300) {
-        if (x % 48) {
-          digitalWrite(2, HIGH);
-        } else {
-          digitalWrite(2, LOW);
-        }
+        digitalWrite(2, HIGH);
       } else if (x < 400) {
-        if (x % 16) {
-          digitalWrite(2, HIGH);
-        } else {
-          digitalWrite(2, LOW);
-        }
+        digitalWrite(2, LOW);
       } else {
-        if (x % 2) {
-          digitalWrite(2, HIGH);
-        } else {
-          digitalWrite(2, LOW);
-        }
+        digitalWrite(2, HIGH);
       }
       delay(1);
     }
@@ -347,22 +326,22 @@ void setup() {
           digitalWrite(2, LOW);
         }
       } else if (x < 200) {
-        if (x % 16) {
-          digitalWrite(2, HIGH);
-        } else {
+        if (x % 6) {
           digitalWrite(2, LOW);
+        } else {
+          digitalWrite(2, HIGH);
         }
       } else if (x < 300) {
-        if (x % 48) {
-          digitalWrite(2, HIGH);
-        } else {
+        if (x % 12) {
           digitalWrite(2, LOW);
+        } else {
+          digitalWrite(2, HIGH);
         }
       } else if (x < 400) {
-        if (x % 16) {
-          digitalWrite(2, HIGH);
-        } else {
+        if (x % 6) {
           digitalWrite(2, LOW);
+        } else {
+          digitalWrite(2, HIGH);
         }
       } else {
         if (x % 2) {

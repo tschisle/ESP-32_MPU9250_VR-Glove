@@ -19,6 +19,7 @@
 #include <WiFi.h>
 #include <WiFiUdp.h>
 WiFiUDP Udp;  // Creation of wifi Udp instance
+const int connect_attempts = 40; //each attempt takes 0.5 sec
 unsigned int localPort = 9999;
 const char *ssid = "ZyXEL8C1BF8";// "NETGEAR36-5G";
 const char *password = "FFVTWR3NKNP77";
@@ -30,9 +31,9 @@ IPAddress primaryDNS(8, 8, 8, 8);   //optional
 IPAddress secondaryDNS(8, 8, 4, 4); //optional
 const int set_point = 50; //example value based on several online tutorials
 int command = 0; //variable that contains the step
-int T7_average = 0;  //3 - Select/Deselect
-int T6_average = 0;  //2 - Orientation
-int T5_average = 0;  //1 - Pinch
+int T6_average = 0;  //3 - Select/Deselect
+int T5_average = 0;  //2 - Orientation
+int T4_average = 0;  //1 - Pinch
 const int mtravg = 5;
 int mtrollingloc = 0;
 int mt_rolling_average[3][mtravg]; //rolling average to smooth pinch gesture (causes some delay so finding a happy medium is necessary) NOTE: rolling average before PLSF is exactly equivalent to a rolling average after PLSF
@@ -56,42 +57,22 @@ void setup() {
   if (!WiFi.config(Right_IP, gateway, subnet, primaryDNS, secondaryDNS)) {
     for (int x = 0; x < 500; x ++) {
       if (x < 100) {
-        if (x % 2) {
-          digitalWrite(2, HIGH);
-        } else {
-          digitalWrite(2, LOW);
-        }
+        digitalWrite(2, HIGH);
       } else if (x < 200) {
-        if (x % 3) {
-          digitalWrite(2, HIGH);
-        } else {
-          digitalWrite(2, LOW);
-        }
+        digitalWrite(2, LOW);
       } else if (x < 300) {
-        if (x % 4) {
-          digitalWrite(2, HIGH);
-        } else {
-          digitalWrite(2, LOW);
-        }
+        digitalWrite(2, HIGH);
       } else if (x < 400) {
-        if (x % 3) {
-          digitalWrite(2, HIGH);
-        } else {
-          digitalWrite(2, LOW);
-        }
+        digitalWrite(2, LOW);
       } else {
-        if (x % 2) {
-          digitalWrite(2, HIGH);
-        } else {
-          digitalWrite(2, LOW);
-        }
+        digitalWrite(2, HIGH);
       }
       delay(1);
     }
   }
   WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED)
-  {
+  int connect_attempts_counter = 0;
+  while ((WiFi.status() != WL_CONNECTED) && (connect_attempts_counter++ < connect_attempts)) {
     for (int x = 0; x < 500; x ++) {
       if (x < 100) {
         if (x % 2) {
@@ -100,22 +81,22 @@ void setup() {
           digitalWrite(2, LOW);
         }
       } else if (x < 200) {
-        if (x % 3) {
-          digitalWrite(2, HIGH);
-        } else {
+        if (x % 6) {
           digitalWrite(2, LOW);
+        } else {
+          digitalWrite(2, HIGH);
         }
       } else if (x < 300) {
-        if (x % 4) {
-          digitalWrite(2, HIGH);
-        } else {
+        if (x % 12) {
           digitalWrite(2, LOW);
+        } else {
+          digitalWrite(2, HIGH);
         }
       } else if (x < 400) {
-        if (x % 3) {
-          digitalWrite(2, HIGH);
-        } else {
+        if (x % 6) {
           digitalWrite(2, LOW);
+        } else {
+          digitalWrite(2, HIGH);
         }
       } else {
         if (x % 2) {
@@ -123,6 +104,15 @@ void setup() {
         } else {
           digitalWrite(2, LOW);
         }
+      }
+      if(x == 100){
+        Serial.print("Connecting");
+      }else if(x == 200){
+        Serial.print(" .");
+      }else if(x == 300){
+        Serial.print(" .");
+      }else if(x == 400){
+        Serial.println(" .");
       }
       delay(1);
     }
@@ -132,13 +122,13 @@ void setup() {
   Serial.println("ESP32 Touch Test");
   //initial reading of the sensors
   Serial.print("Initial Values  ");
+  T4_average = touchRead(T4);
   T5_average = touchRead(T5);
   T6_average = touchRead(T6);
-  T7_average = touchRead(T7);
   for (int x = 0; x < mtravg; x++) {
-    mt_rolling_average[0][x] = T5_average;
-    mt_rolling_average[1][x] = T6_average;
-    mt_rolling_average[2][x] = T7_average;
+    mt_rolling_average[0][x] = T4_average;
+    mt_rolling_average[1][x] = T5_average;
+    mt_rolling_average[2][x] = T6_average;
   }
   // -=-=-=-=-=-=-=-=-
   delay(600);
@@ -149,23 +139,23 @@ void setup() {
 
 void loop() {
   if (touch_timer <= (millis() - touch_timer_length)) { //checks the touch pin every 120 milliseconds (touch_timer_length)
-    mt_rolling_average[0][mtrollingloc] = touchRead(T5);
-    mt_rolling_average[1][mtrollingloc] = touchRead(T6);
-    mt_rolling_average[2][mtrollingloc] = touchRead(T7);
+    mt_rolling_average[0][mtrollingloc] = touchRead(T4);
+    mt_rolling_average[1][mtrollingloc] = touchRead(T5);
+    mt_rolling_average[2][mtrollingloc] = touchRead(T6);
+    T4_average = 0;
     T5_average = 0;
     T6_average = 0;
-    T7_average = 0;
     for (int x = 0; x < mtravg; x++) {
-      T5_average = mt_rolling_average[0][x] + T5_average;
-      T6_average = mt_rolling_average[1][x] + T6_average;
-      T7_average = mt_rolling_average[2][x] + T7_average;
+      T4_average = mt_rolling_average[0][x] + T4_average;
+      T5_average = mt_rolling_average[1][x] + T5_average;
+      T6_average = mt_rolling_average[2][x] + T6_average;
     }
+    T4_average = T4_average / mtravg;
     T5_average = T5_average / mtravg;
     T6_average = T6_average / mtravg;
-    T7_average = T7_average / mtravg;
     mtrollingloc = (mtrollingloc + 1) % mtravg;
     if (touchstepper == 0) {
-      if (T5_average < set_point) {
+      if (T4_average < set_point) {
         touch_flag[0][0] = true;   //1 - Pinch
         digitalWrite(2, HIGH);
       } else {
@@ -173,7 +163,7 @@ void loop() {
       }
     }
     if (touchstepper == 1) {
-      if (T6_average < set_point) {
+      if (T5_average < set_point) {
         touch_flag[0][1] = true;     //2 - Orientation
         digitalWrite(2, HIGH);
       } else {
@@ -181,7 +171,7 @@ void loop() {
       }
     }
     if (touchstepper == 2) {
-      if (T7_average < set_point) {
+      if (T6_average < set_point) {
         touch_flag[0][2] = true;     //3 - Select/Deselect
         digitalWrite(2, HIGH);
       } else {
