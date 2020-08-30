@@ -61,6 +61,7 @@ float PLSF_Filter::PLSF_Update(float _input){
     //approximating current mag data from best fit LINE and reporting movement percentage
     approximation = (least_square_slope_inter[0] * pls_samples) + least_square_slope_inter[1];
     //this step provides the unitless value
+	return(approximation);
 }
 
 void PLSF_Filter::PLSF_Clear(){
