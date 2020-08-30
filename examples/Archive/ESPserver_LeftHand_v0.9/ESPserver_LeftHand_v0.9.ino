@@ -27,6 +27,7 @@
 #define I2Cclock 400000
 #define I2Cport Wire
 #define MPU9250_ADDRESS MPU9250_ADDRESS_AD0
+#define SERIAL 1 //toggles communication via USB port
 
 // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
@@ -40,17 +41,17 @@ int pinch_step = 0;
 
 //Timer
 unsigned long pinch_tilt_time = 0;
-int pinch_tilt_update = 25;
+int pinch_tilt_update = 50;
 
 //Magnetometer Variables
 float position = 1;
 char sinput;
 float magavg[3] = {0, 0, 0};
 int counter = 0;
-const int avgsam = 7; //how many samples to average
+const int avgsam = 3; //how many samples to average
 float rolling_average[3][avgsam]; //rolling average to smooth pinch gesture (causes some delay so finding a happy medium is necessary) NOTE: rolling average before PLSF is exactly equivalent to a rolling average after PLSF
 int rolling_average_counter = 0;//tracks the location of the rolling average
-const int samples = 25; //how many averaged sample clusters used to find the slope
+const int samples = 15; //how many averaged sample clusters used to find the slope
 float least_square_mat[4][samples]; //used to find the slope of the averaged sample clusters   1: sami - samavg 2: magi-magavg 3: 1*2 4: 1*1
 float least_square_avg; //used to find the slope of the averaged sample clusters
 float least_square_sum_comp[2]; //used to find the slope of the averaged sample clusters
@@ -290,9 +291,11 @@ int touch_reading;
 
 void setup() {
   //wifi setup
-  Serial.begin(115200);
-  //touch sensing setup
-  Serial.println("ESP32 Touch Test");
+  if (SERIAL) {
+    Serial.begin(115200);
+    //touch sensing setup
+    Serial.println("ESP32 Touch Test");
+  }
   touch.initialize();
   // -=-=-=-=-=-=-=-=-
   pinMode(2, OUTPUT);
@@ -350,14 +353,16 @@ void setup() {
           digitalWrite(2, LOW);
         }
       }
-      if(x == 100){
-        Serial.print("Connecting");
-      }else if(x == 200){
-        Serial.print(" .");
-      }else if(x == 300){
-        Serial.print(" .");
-      }else if(x == 400){
-        Serial.println(" .");
+      if (SERIAL) {
+        if (x == 100) {
+          Serial.print("Connecting");
+        } else if (x == 200) {
+          Serial.print(" .");
+        } else if (x == 300) {
+          Serial.print(" .");
+        } else if (x == 400) {
+          Serial.println(" .");
+        }
       }
       delay(1);
     }
@@ -399,6 +404,11 @@ void loop() {
     prev_right_cmd = right_cmd;
   }
   right_cmd = getByte();
+  if (SERIAL) {
+    if (Serial.read() == '3') {
+      right_cmd = 13;
+    }
+  }
   if ((touch_timer <= (millis() - touch_timer_length))) { //updates touchpad every 120ms
     command = touch.update();
     touch_timer = millis();
@@ -427,26 +437,41 @@ void loop() {
   }
   if (!prev_pinch_flag && pinch_flag) {
     pinch_step++;
-    if (pinch_step == 5) {
+    if (pinch_step == 6) {
       pinch_step = 2;
     }
-  }
-  if (pinch_step == 1) {
-    tilt_cal = true;
-    Serial.println("tilt_cal");
-  } else if (pinch_step == 2) {
-    pinch_max_cal = true;
-    Serial.println("pinch_max_cal");
-  } else if (pinch_step == 3) {
-    pinch_min_cal = true;
-    Serial.println("pinch_min_cal");
-  } else if (pinch_step == 4) {
-    if (!pinch_gesture) {
-      pinch_gesture = true;
-      Serial.println("pinch_gesture ON");
+    if (pinch_step == 1) {
+      tilt_cal = true;
+      pinch_flag = false;
+      if (SERIAL) {
+        Serial.println("tilt_cal");
+      }
+    } else if (pinch_step == 2) {
+      pinch_max_cal = true;
+      pinch_flag = false;
+      if (SERIAL) {
+        Serial.println("pinch_max_cal");
+      }
+    } else if (pinch_step == 3) {
+      pinch_min_cal = true;
+      pinch_flag = false;
+      if (SERIAL) {
+        Serial.println("pinch_min_cal");
+      }
+    } else if (pinch_step == 4) {
+      if (!pinch_gesture) {
+        pinch_gesture = true;
+        pinch_flag = false;
+        if (SERIAL) {
+          Serial.println("pinch_gesture ON");
+        }
+      }
     } else {
       pinch_gesture = false;
-      Serial.println("pinch_gesture OFF");
+      pinch_flag = false;
+      if (SERIAL) {
+        Serial.println("pinch_gesture OFF");
+      }
     }
   }
   if (millis() >= pinch_tilt_time) {
@@ -481,7 +506,9 @@ void loop() {
     if (tilt_cal) {
       acc_theta_cal = acc_theta;
       acc_phi_cal = acc_phi;
-      Serial.println("Tilt calibration complete");
+      if (SERIAL) {
+        Serial.println("Tilt calibration complete");
+      }
       tilt_cal = false;
     }
     if (abs(acc_theta_cal - acc_theta) > tilt_tolerance) { // you can add an additional condition to fine tine the tilt condition from a cone to cone rotated around an axis
@@ -512,11 +539,15 @@ void loop() {
           manmagbias[0] = magavg[0] / avgsam;
           manmagbias[1] = magavg[1] / avgsam;
           manmagbias[2] = magavg[2] / avgsam;
-          Serial.println("Pinch MAX calibration complete");
+          if (SERIAL) {
+            Serial.println("Pinch MAX calibration complete");
+          }
           pinch_max_cal = false;
         } else { //reference setting
           magmin = sqrt(pow(magavg[0] / avgsam, 2) + pow(magavg[1] / avgsam, 2) + pow(magavg[2] / avgsam, 2));
-          Serial.println("Pinch MIN calibration complete");
+          if (SERIAL) {
+            Serial.println("Pinch MIN calibration complete");
+          }
           pinch_min_cal = false;
         }
         magavg[0] = 0;
@@ -589,15 +620,17 @@ void loop() {
         } else if (percentage > 100) {
           percentage = 100;
         }
-        percentage = map(percentage, 55, 85, 0, 100); //quick fix
+        percentage = map(percentage, 55, 90, 0, 100); //quick fix
         if (percentage < 0) {
           percentage = 0;
         } else if (percentage > 100) {
           percentage = 100;
         }
         if (pinch_initialization_buffer >= (avgsam + samples - 1)) {
-          Serial.print("percent = ");
-          Serial.println((uint8_t)percentage);
+          if (SERIAL) {
+            Serial.print("percent = ");
+            Serial.println((uint8_t)percentage);
+          }
           //-=-=-=-=-=-=-=-=-=-=-=-    OUTPUT
           sendByteUnity(percentage + 100); //sends a messace every cycle to the client 192, 168, 4, 12
           //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
