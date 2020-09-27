@@ -540,12 +540,24 @@ void loop() {
           manmagbias[1] = magavg[1] / avgsam;
           manmagbias[2] = magavg[2] / avgsam;
           if (SERIAL) {
+            Serial.print("Mag x = ");
+            Serial.print(manmagbias[0]);
+            Serial.print("Mag y = ");
+            Serial.print(manmagbias[1]);
+            Serial.print("Mag z = ");
+            Serial.print(manmagbias[2]);
             Serial.println("Pinch MAX calibration complete");
           }
           pinch_max_cal = false;
         } else { //reference setting
           magmin = sqrt(pow(magavg[0] / avgsam, 2) + pow(magavg[1] / avgsam, 2) + pow(magavg[2] / avgsam, 2));
           if (SERIAL) {
+            Serial.print("Mag x = ");
+            Serial.print(magavg[0] / avgsam);
+            Serial.print("Mag y = ");
+            Serial.print(magavg[1] / avgsam);
+            Serial.print("Mag z = ");
+            Serial.print(magavg[2] / avgsam);
             Serial.println("Pinch MIN calibration complete");
           }
           pinch_min_cal = false;
@@ -587,6 +599,10 @@ void loop() {
         //converts from 3 coordinates to a magnitude.  This is possible since we're effectively moving the origin to the max position,
         //however we're now operating under the assumption that the curve from the finger movement can be adequately approximated with a line
         magmag = sqrt((magavg[0] * magavg[0]) + (magavg[1] * magavg[1]) + (magavg[2] * magavg[2]));
+        if (SERIAL) {
+            Serial.print("Magnetometer Magnitude = ");
+            Serial.print(magmag);
+        }
         //clearing previous values and shifting mag data
         for (int x = 0; x < samples; x++) {
           if (x < (samples - 1)) {
@@ -615,17 +631,20 @@ void loop() {
         //this step provides the unitless value
         approximation = (least_square_slope_inter[0] * samples) + least_square_slope_inter[1];
         percentage = (1 - (approximation / magmin)) * 100; //finds percentage from max to min, inverts the value, then multiples it by 100
+        percentage = map(approximation, magmin, sqrt(pow(manmagbias[0] / avgsam, 2) + pow(manmagbias[1] / avgsam, 2) + pow(manmagbias[2] / avgsam, 2)), 0,100);
+        /*
         if (percentage < 0) {
           percentage = 0;
         } else if (percentage > 100) {
           percentage = 100;
         }
-        percentage = map(percentage, 55, 90, 0, 100); //quick fix
+        //percentage = map(percentage, 55, 90, 0, 100); //quick fix
         if (percentage < 0) {
           percentage = 0;
         } else if (percentage > 100) {
           percentage = 100;
         }
+        */
         if (pinch_initialization_buffer >= (avgsam + samples - 1)) {
           if (SERIAL) {
             Serial.print("percent = ");
