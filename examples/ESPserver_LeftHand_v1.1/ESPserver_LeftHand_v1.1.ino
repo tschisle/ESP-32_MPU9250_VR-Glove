@@ -557,10 +557,18 @@ void loop() {
             manmagbias[1] = magavg[1];
             manmagbias[2] = magavg[2];
             max_phi = phi(manmagbias[1], manmagbias[2]);
+            if (SERIAL) {
+              Serial.print("max phi = ");
+              Serial.print(max_phi);
+            }
             pinch_max_cal = false;
             digitalWrite(2, LOW);
           } else { //reference setting
             min_phi = phi(magavg[1], magavg[2]);
+            if (SERIAL) {
+              Serial.print("min phi = ");
+              Serial.print(min_phi);
+            }
             pinch_min_cal = false;
             digitalWrite(2, LOW);
           }
@@ -573,10 +581,10 @@ void loop() {
           //converts from 3 coordinates to a magnitude.  This is possible since we're effectively moving the origin to the max position,
           //however we're now operating under the assumption that the curve from the finger movement can be adequately approximated with a line
           magmag = sqrt((magavg[0] * magavg[0]) + (magavg[1] * magavg[1]) + (magavg[2] * magavg[2]));
+          current_phi = phi(magavg[1], magavg[2]);
           if (SERIAL) {
             Serial.print("phi = ");
-            current_phi = phi(magavg[1], magavg[2]);
-            Serial.print(phi(magavg[1], magavg[2]));
+            Serial.print(current_phi);
           }
           //clearing previous values and shifting mag data
           for (int x = 0; x < samples; x++) {
